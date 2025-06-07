@@ -1,0 +1,11 @@
+[project]
+name = "rhythm-trainer"
+version = "0.1.0"
+description = "Random exercise picker with weighted extraction"
+readme = "README.md"
+authors = [
+    { name = "Francesco Marchisotti", email = "francesco.marchisotti@gmail.com" }
+]
+license = { file = "LICENSE" }
+requires-python = ">=3.13"
+dependencies = []
