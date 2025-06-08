@@ -6,7 +6,18 @@ CSV_NAME = Path("exercises-and-weights.csv")
 NUM_EXERCISES = 90
 
 
-def get_exercises_and_weights() -> tuple[list[int], list[int]]:  # TODO: Add docstring
+def get_exercises_and_weights() -> tuple[list[int], list[int]]:
+    """
+    Reads exercise numbers and their corresponding weights from a CSV file.
+
+    Returns:
+        tuple[list[int], list[int]]: A tuple containing two lists:
+            - The first list contains exercise numbers as integers.
+            - The second list contains the corresponding weights as integers.
+
+    If the CSV file is not found, returns a default list of exercise numbers from 1 to
+    NUM_EXERCISES, each with a weight of 1.
+    """
     try:
         exercises: list[int] = []
         weights: list[int] = []
@@ -23,9 +34,14 @@ def get_exercises_and_weights() -> tuple[list[int], list[int]]:  # TODO: Add doc
         return list(range(1, NUM_EXERCISES + 1)), [1] * NUM_EXERCISES
 
 
-def save_exercises_and_weights(
-    exercises: list[int], weights: list[int]
-) -> None:  # TODO: Add docstring
+def save_exercises_and_weights(exercises: list[int], weights: list[int]) -> None:
+    """
+    Saves a list of exercises and their corresponding weights to a CSV file.
+
+    The function writes the exercises and weights to a CSV file specified by the global
+    variable CSV_NAME. Each row in the file contains an exercise and its associated
+    weight.
+    """
     with open(CSV_NAME, "w", encoding="utf-8") as file:
         writer = csv.writer(file)
         writer.writerow(["Exercise", "Weight"])  # Write header
@@ -33,9 +49,10 @@ def save_exercises_and_weights(
             writer.writerow([exercise, weight])
 
 
-def pick_exercise(
-    exercises: list[int], weights: list[int]
-) -> int:  # TODO: Add docstring
+def pick_exercise(exercises: list[int], weights: list[int]) -> int:
+    """
+    Selects a single exercise from a list of exercises based on provided weights.
+    """
     if not exercises:
         raise ValueError("The exercise list is empty.")
 
@@ -48,7 +65,7 @@ def main():  # TODO: Automatically open the backing track for the selected exerc
     while True:
         exercise = pick_exercise(exercises, weights)
         print(f"Play exercise {exercise}")
-        response = input("Did you play if well? (y/n/yq/nq): ").strip().lower()
+        response = input("Did you play it well? (y/n/yq/nq): ").strip().lower()
 
         if response[0] == "y":
             if weights[exercise - 1] > 1:
