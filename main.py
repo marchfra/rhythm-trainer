@@ -1,51 +1,93 @@
 import csv
 import random
+from itertools import islice
 from pathlib import Path
+from typing import Any
 
-CSV_NAME = Path("exercises-and-weights.csv")
-NUM_EXERCISES = 90
+import yaml
+
+CONFIG_FILE = Path("config.yaml")
 
 
-def get_exercises_and_weights() -> tuple[list[int], list[int]]:
+def parse_config() -> dict:
+    if CONFIG_FILE.exists():
+        with open(CONFIG_FILE, "r", encoding="utf-8") as file:
+            config: dict[str, Any] = yaml.safe_load(file)
+    else:
+        raise FileNotFoundError(
+            f"Configuration file {CONFIG_FILE} not found. Write a configuration file to "
+            f"use the app. For help on how to do that, see the README at "
+            f"https://github.com/marchfra/caged-trainer."
+        )
+
+    if not all(
+        key in config for key in ["first_exercise", "last_exercise", "csv_path"]
+    ):  # TODO: Add possibility to input this values at runtime
+        raise ValueError(
+            "Configuration file is missing required keys: "
+            "'first_exercise', 'last_exercise', and 'csv_path'."
+        )
+
+    config["csv_path"] = Path(config["csv_path"])
+
+    return config
+
+
+def get_exercises_and_weights(
+    csv_path: Path, first_exercise: int, last_exercise: int
+) -> tuple[list[int], list[int]]:
     """
-    Reads exercise numbers and their corresponding weights from a CSV file.
+    Reads exercises and their corresponding weights from a CSV file within a specified range.
 
-    Returns:
-        tuple[list[int], list[int]]: A tuple containing two lists:
-            - The first list contains exercise numbers as integers.
-            - The second list contains the corresponding weights as integers.
-
-    If the CSV file is not found, returns a default list of exercise numbers from 1 to
-    NUM_EXERCISES, each with a weight of 1.
+    If the CSV file exists, extracts exercise IDs and weights from the file between the given indices,
+    with the minimu weight set to 1.
+    If the file does not exist, generates a default list of exercise IDs and assigns a weight of 1 to each.
     """
-    try:
+    if csv_path.exists():
         exercises: list[int] = []
         weights: list[int] = []
-        with open(CSV_NAME, "r", encoding="utf-8") as file:
+        with open(csv_path, "r", encoding="utf-8") as file:
+            reader = csv.reader(file)
+            next(reader)  # Skip header
+            for row in islice(reader, first_exercise - 1, last_exercise):
+                exercises.append(int(row[0]))
+                weights.append(max(int(row[1]), 1))
+
+        return exercises, weights
+    else:
+        num_exercises = last_exercise - first_exercise + 1
+        return list(range(first_exercise, last_exercise + 1)), [1] * num_exercises
+
+
+def save_exercises_and_weights(
+    csv_path: Path, exercises: list[int], weights: list[int], total_exercises: int = 90
+) -> None:
+    """
+    Saves the weights of the exercises to a CSV file.
+
+    If the CSV file exists, it reads the current weights and updates them with the provided values.
+    If the CSV file does not exist, it initializes all exercise weights to 0 and sets the provided weights.
+    The CSV file will contain all exercises from 1 to `total_exercises`, each with their corresponding weight.
+    """
+    # Initialize all weights to 0 for exercises not in the CSV and read existing weights
+    all_weights = {i: 0 for i in range(1, total_exercises + 1)}
+    if csv_path.exists():
+        with open(csv_path, "r", encoding="utf-8") as file:
             reader = csv.reader(file)
             next(reader)  # Skip header
             for row in reader:
-                if row:  # Skip empty rows
-                    exercises.append(int(row[0]))
-                    weights.append(int(row[1]))
+                if row:
+                    all_weights[int(row[0])] = int(row[1])
 
-        return exercises, weights
-    except FileNotFoundError:
-        return list(range(1, NUM_EXERCISES + 1)), [1] * NUM_EXERCISES
+    # Update weights for the exercises being saved
+    for i, exercise in enumerate(exercises):
+        all_weights[exercise] = weights[i]
 
-
-def save_exercises_and_weights(exercises: list[int], weights: list[int]) -> None:
-    """
-    Saves a list of exercises and their corresponding weights to a CSV file.
-
-    The function writes the exercises and weights to a CSV file specified by the global
-    variable CSV_NAME. Each row in the file contains an exercise and its associated
-    weight.
-    """
-    with open(CSV_NAME, "w", encoding="utf-8") as file:
+    # Write the updated weights back to the CSV file
+    with open(csv_path, "w", encoding="utf-8") as file:
         writer = csv.writer(file)
         writer.writerow(["Exercise", "Weight"])  # Write header
-        for exercise, weight in zip(exercises, weights):
+        for exercise, weight in all_weights.items():
             writer.writerow([exercise, weight])
 
 
@@ -60,27 +102,34 @@ def pick_exercise(exercises: list[int], weights: list[int]) -> int:
 
 
 def main():  # TODO: Automatically open the backing track for the selected exercise
-    exercises, weights = get_exercises_and_weights()
+    config = parse_config()
+
+    exercises, weights = get_exercises_and_weights(
+        config["csv_path"], config["first_exercise"], config["last_exercise"]
+    )
 
     while True:
         exercise = pick_exercise(exercises, weights)
         print(f"Play exercise {exercise}")
-        response = input("Did you play it well? (y/n/yq/nq): ").strip().lower()
 
-        if response[0] == "y":
-            if weights[exercise - 1] > 1:
-                weights[exercise - 1] -= 1
-        elif response[0] == "n":
-            weights[exercise - 1] += 1
-        else:
-            print("Invalid response. Please enter 'y', 'n', 'yq', or 'nq'.")
-            continue
+        while True:
+            response = input("Did you play it well? (y/n/q): ").strip().lower()
+            if response in ["y", "n", "q"]:
+                break
+            print("Invalid response. Please enter 'y' (yes), 'n' (no), or 'q' (quit).")
 
-        if "q" in response:
+        if response == "q":
             save_exercises_and_weights(exercises, weights)
             exit(0)
+
+        print()
+        if response == "y":
+            if weights[exercise - 1] > 1:
+                weights[exercise - 1] -= 1
+        elif response == "n":
+            weights[exercise - 1] += 1
         else:
-            print()
+            raise ValueError("Unexpected response. This should never happen.")
 
 
 if __name__ == "__main__":
