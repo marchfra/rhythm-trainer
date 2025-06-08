@@ -22,16 +22,9 @@ def parse_config() -> dict[str, Any]:
         )
 
     if "csv_path" not in config:
-        print(f"Configuration file {CONFIG_FILE} does not contain a 'csv_path' key.")
-        response = input(
-            "Press any key to continue without a CSV file, or 'q' to quit: "
+        raise KeyError(
+            "Configuration file is missing the 'csv_path' key. Please add it to the config file."
         )
-        if response.strip().lower() == "q":
-            exit(0)
-
-        config["csv_path"] = None
-    else:
-        config["csv_path"] = Path(config["csv_path"])
 
     if "first_exercise" not in config:
         config["first_exercise"] = 1
@@ -41,20 +34,8 @@ def parse_config() -> dict[str, Any]:
     return config
 
 
-def generate_default_exercuses_and_weights(
-    first_exercise: int, last_exercise: int
-) -> tuple[list[int], list[int]]:
-    """
-    Generates a list of exercise indices and corresponding weights for a range of exercises.
-    """
-    num_exercises = last_exercise - first_exercise + 1
-    return list(range(1, last_exercise + 1)), [0] * (first_exercise - 1) + [
-        1
-    ] * num_exercises
-
-
 def get_exercises_and_weights(
-    csv_path: Path | None, first_exercise: int, last_exercise: int
+    csv_path: Path, first_exercise: int, last_exercise: int
 ) -> tuple[list[int], list[int]]:
     """
     Reads exercises and their corresponding weights from a CSV file within a specified range.
@@ -63,11 +44,7 @@ def get_exercises_and_weights(
     with the minimum weight set to 1.
     If the file does not exist, generates a default list of exercise IDs and assigns a weight of 1 to each.
     """
-    if csv_path is None:
-        print("No CSV path provided. Generating default exercises and weights.")
-        return generate_default_exercuses_and_weights(first_exercise, last_exercise)
-
-    if csv_path.exists() or csv_path is not None:
+    if csv_path.exists():
         print(f"Found existing CSV file at {csv_path}.")
         exercises: list[int] = []
         weights: list[int] = []
@@ -83,11 +60,14 @@ def get_exercises_and_weights(
         print(
             f"No CSV file found at {csv_path}. Generating default exercises and weights."
         )
-        return generate_default_exercuses_and_weights(first_exercise, last_exercise)
+        num_exercises = last_exercise - first_exercise + 1
+        return list(range(1, last_exercise + 1)), [0] * (first_exercise - 1) + [
+            1
+        ] * num_exercises
 
 
 def save_exercises_and_weights(
-    csv_path: Path | None,
+    csv_path: Path,
     exercises: list[int],
     weights: list[int],
     total_exercises: int = MAX_EXERCISES,
@@ -99,10 +79,6 @@ def save_exercises_and_weights(
     If the CSV file does not exist, it initializes all exercise weights to 0 and sets the provided weights.
     The CSV file will contain all exercises from 1 to `total_exercises`, each with their corresponding weight.
     """
-    if csv_path is None:
-        print("No CSV path provided. Skipping save operation.")
-        return
-
     # Initialize all weights to 0 for exercises not in the CSV and read existing weights
     all_weights = {i: 0 for i in range(1, total_exercises + 1)}
     if csv_path.exists():
