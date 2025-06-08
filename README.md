@@ -22,5 +22,5 @@ backing_tracks_dir: /path/to/backing-tracks/
 Here is an explanation of how it works:
 
 * `csv_path` is the path to the database. Note that the filename of your database **must** end with `.csv`. *Hint: if you're a teacher you can have one database for each student.*
-* `first_esercise` and `last_exercise` define the range of exercises to be extracted.
+* `first_esercise` and `last_exercise` define the range of exercises to be extracted. If you're using this tool with another book, please run the application once with `last_exercise` set to the total number of exercises in your book, then quit and now you can run again with any value of `last_exercise` you want. This should be done once for every database.
 * `backing_tracks_dir` is the path to the backing tracks folder (can be downloaded from inside your personal area of the [Crehathor website](https://www.crehathor.com/web/ita/store-prodotto.asp?IDprd=A594290LQ)). Unless your book's backing tracks follow the *exact* same structure as this book, this field must be omitted.
