@@ -1,6 +1,7 @@
 import csv
 import random
 import sys
+from _csv import _reader, _writer
 from itertools import islice
 from pathlib import Path
 from typing import Any
@@ -53,7 +54,7 @@ def get_exercises_and_weights(
         exercises: list[int] = []
         weights: list[int] = []
         with csv_path.open("r") as file:
-            reader = csv.reader(file)
+            reader: _reader = csv.reader(file)
             next(reader)  # Skip header
             for row in islice(reader, first_exercise - 1, last_exercise):
                 exercises.append(int(row[0]))
@@ -63,7 +64,7 @@ def get_exercises_and_weights(
     print(
         f"No CSV file found at {csv_path}. Generating default exercises and weights.",
     )
-    num_exercises = last_exercise - first_exercise + 1
+    num_exercises: int = last_exercise - first_exercise + 1
     return list(range(1, last_exercise + 1)), [0] * (first_exercise - 1) + [
         1,
     ] * num_exercises
@@ -85,10 +86,10 @@ def save_exercises_and_weights(
     corresponding weight.
     """
     # Initialize all weights to 0 for exercises not in the CSV and read existing weights
-    all_weights = dict.fromkeys(range(1, total_exercises + 1), 0)
+    all_weights: dict[int, int] = dict.fromkeys(range(1, total_exercises + 1), 0)
     if csv_path.exists():
         with csv_path.open("r") as file:
-            reader = csv.reader(file)
+            reader: _reader = csv.reader(file)
             next(reader)  # Skip header
             for row in reader:
                 if row:
@@ -100,7 +101,7 @@ def save_exercises_and_weights(
 
     # Write the updated weights back to the CSV file
     with csv_path.open("w") as file:
-        writer = csv.writer(file)
+        writer: _writer = csv.writer(file)
         writer.writerow(["Exercise", "Weight"])  # Write header
         for exercise, weight in all_weights.items():
             writer.writerow([exercise, weight])
@@ -116,8 +117,10 @@ def pick_exercise(exercises: list[int], weights: list[int]) -> int:
 
 # TODO: Automatically open the backing track for the selected exercise
 def main() -> None:
-    config = parse_config()
+    config: dict[str, Any] = parse_config()
 
+    exercises: list[int]
+    weights: list[int]
     exercises, weights = get_exercises_and_weights(
         config["csv_path"],
         config["first_exercise"],
@@ -125,11 +128,11 @@ def main() -> None:
     )
 
     while True:
-        exercise = pick_exercise(exercises, weights)
+        exercise: int = pick_exercise(exercises, weights)
         print(f"Play exercise {exercise}")
 
         while True:
-            response = input("Did you play it well? (y/n/q): ").strip().lower()
+            response: str = input("Did you play it well? (y/n/q): ").strip().lower()
             if response in ["y", "n", "q"]:
                 break
             print("Invalid response. Please enter 'y' (yes), 'n' (no), or 'q' (quit).")
