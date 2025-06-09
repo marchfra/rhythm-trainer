@@ -1,5 +1,6 @@
 import csv
 import random
+import subprocess
 import sys
 from itertools import islice
 from pathlib import Path
@@ -27,11 +28,21 @@ def parse_config() -> dict[str, Any]:
             "Configuration file is missing the 'csv_path' key. Please add it to the "
             "config file.",
         )
+    config["csv_path"] = Path(config["csv_path"])
 
     if "first_exercise" not in config:
         config["first_exercise"] = 1
     if "last_exercise" not in config:
         config["last_exercise"] = MAX_EXERCISES
+
+    if "backing_tracks_dir" not in config:
+        config["backing_tracks_dir"] = None
+    else:
+        config["backing_tracks_dir"] = Path(config["backing_tracks_dir"])
+        if not config["backing_tracks_dir"].is_dir():
+            raise FileNotFoundError(
+                f"Backing track file '{config['backing_tracks_dir']}' does not exist.",
+            )
 
     return config
 
@@ -114,7 +125,40 @@ def pick_exercise(exercises: list[int], weights: list[int]) -> int:
     return random.choices(exercises, weights=weights, k=1)[0]
 
 
-# TODO: Automatically open the backing track for the selected exercise
+def play_backing_track(exercise: int, backing_tracks_dir: Path) -> None:
+    subdirs = [
+        "Acoustic",
+        "Classic Blues",
+        "Classic Rock",
+        "Funk",
+        "Fusion",
+        "Hard Rock & Heavy Metal",
+        "Jazz",
+        "Pop",
+        "Soul",
+    ]
+
+    folder = backing_tracks_dir / subdirs[(exercise - 1) // 10]
+    if not folder.is_dir():
+        raise FileNotFoundError(
+            f"Backing track folder '{folder}' does not exist. Please check your "
+            "configuration.",
+        )
+
+    track_path = folder / f"BK {folder.name} {exercise:02d}.mp3"
+    if not track_path.is_file():
+        raise FileNotFoundError(
+            f"Backing track file '{track_path}' does not exist. Please check your "
+            "configuration.",
+        )
+
+    print(f"Playing backing track '{track_path.name}'")
+    subprocess.Popen(  # noqa: S603
+        ["/usr/bin/open", str(track_path)],
+        stdout=subprocess.DEVNULL,
+    )
+
+
 def main() -> None:
     config = parse_config()
 
@@ -127,6 +171,9 @@ def main() -> None:
     while True:
         exercise = pick_exercise(exercises, weights)
         print(f"Play exercise {exercise}")
+        if config["backing_tracks_dir"]:
+            input("Press Enter to play the backing track for this exercise...")
+            play_backing_track(exercise, config["backing_tracks_dir"])
 
         while True:
             response = input("Did you play it well? (y/n/q): ").strip().lower()
@@ -141,10 +188,10 @@ def main() -> None:
 
         print()
         if response == "y":
-            if weights[exercise - 1] > 1:
-                weights[exercise - 1] -= 1
+            if weights[exercise - config["first_exercise"]] > 1:
+                weights[exercise - config["first_exercise"]] -= 1
         elif response == "n":
-            weights[exercise - 1] += 1
+            weights[exercise - config["first_exercise"]] += 1
         else:
             raise ValueError("Unexpected response. This should never happen.")
 
