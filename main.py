@@ -117,12 +117,24 @@ def save_exercises_and_weights(
             writer.writerow([exercise, weight])
 
 
-def pick_exercise(exercises: list[int], weights: list[int]) -> int:
+def pick_exercise(
+    exercises: list[int],
+    weights: list[int],
+    ex_buffer: int = 10,
+    buffer: list[int] = [],  # noqa: B006 - This is intended behavior
+) -> int:
     """Select a single exercise from a list of exercises based on provided weights."""
     if not exercises:
         raise ValueError("The exercise list is empty.")
 
-    return random.choices(exercises, weights=weights, k=1)[0]
+    exercise = random.choices(exercises, weights=weights, k=1)[0]
+    while exercise in buffer:
+        exercise = random.choices(exercises, weights=weights, k=1)[0]
+    buffer.append(exercise)
+    if len(buffer) > ex_buffer:
+        buffer.pop(0)
+
+    return exercise
 
 
 def play_backing_track(exercise: int, backing_tracks_dir: Path) -> None:
