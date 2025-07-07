@@ -12,6 +12,49 @@ CONFIG_FILE = Path("config.yaml")
 MAX_EXERCISES = 90  # Maximum number of exercises supported
 
 
+def main() -> None:
+    config = parse_config()
+
+    exercises, weights = get_exercises_and_weights(
+        config["csv_path"],
+        config["first_exercise"],
+        config["last_exercise"],
+    )
+
+    random_mode = config.get("random_mode")
+
+    while True:
+        if random_mode:
+            exercise = pick_random_exercise(exercises, weights)
+        else:
+            exercise = get_number_input(
+                "Enter the exercise number to play: ",
+                config["first_exercise"],
+                config["last_exercise"],
+            )
+            print()
+
+        print(f"Play exercise {exercise}")
+        if config["backing_tracks_dir"]:
+            input("Press Enter to play the backing track for this exercise...")
+            play_backing_track(exercise, config["backing_tracks_dir"])
+
+        response = get_valid_input("Did you play it well? (y/n/q): ", ["y", "n", "q"])
+
+        if response == "q":
+            save_exercises_and_weights(config["csv_path"], exercises, weights)
+            sys.exit(0)
+
+        print()
+        if response == "y":
+            if weights[exercise - config["first_exercise"]] > 1:
+                weights[exercise - config["first_exercise"]] -= 1
+        elif response == "n":
+            weights[exercise - config["first_exercise"]] += 1
+        else:
+            raise ValueError("Unexpected response.")
+
+
 def parse_config() -> dict[str, Any]:
     if CONFIG_FILE.exists():
         with CONFIG_FILE.open("r") as file:
@@ -43,6 +86,9 @@ def parse_config() -> dict[str, Any]:
             raise FileNotFoundError(
                 f"Backing track file '{config['backing_tracks_dir']}' does not exist.",
             )
+
+    if "random_mode" not in config:
+        config["random_mode"] = True
 
     return config
 
@@ -95,6 +141,7 @@ def save_exercises_and_weights(
     The CSV file will contain all exercises from 1 to `total_exercises`, each with their
     corresponding weight.
     """
+    print(f"Saving exercises and weights to CSV file {csv_path}")
     # Initialize all weights to 0 for exercises not in the CSV and read existing weights
     all_weights = dict.fromkeys(range(1, total_exercises + 1), 0)
     if csv_path.exists():
@@ -117,7 +164,7 @@ def save_exercises_and_weights(
             writer.writerow([exercise, weight])
 
 
-def pick_exercise(
+def pick_random_exercise(
     exercises: list[int],
     weights: list[int],
     ex_buffer: int = 10,
@@ -171,41 +218,41 @@ def play_backing_track(exercise: int, backing_tracks_dir: Path) -> None:
     )
 
 
-def main() -> None:
-    config = parse_config()
-
-    exercises, weights = get_exercises_and_weights(
-        config["csv_path"],
-        config["first_exercise"],
-        config["last_exercise"],
-    )
-
+def get_valid_input(prompt: str, valid_responses: list[str]) -> str:
+    """Validate user input against a list of valid responses."""
     while True:
-        exercise = pick_exercise(exercises, weights)
-        print(f"Play exercise {exercise}")
-        if config["backing_tracks_dir"]:
-            input("Press Enter to play the backing track for this exercise...")
-            play_backing_track(exercise, config["backing_tracks_dir"])
+        response = input(prompt).strip().lower()
+        if response in valid_responses:
+            return response
+        print(
+            "Invalid input. Please enter one of the following: "
+            f"{', '.join(valid_responses)}.",
+        )
 
-        while True:
-            response = input("Did you play it well? (y/n/q): ").strip().lower()
-            if response in ["y", "n", "q"]:
-                break
-            print("Invalid response. Please enter 'y' (yes), 'n' (no), or 'q' (quit).")
 
-        if response == "q":
-            print(f"Saving exercises and weights to CSV file {config['csv_path']}")
-            save_exercises_and_weights(config["csv_path"], exercises, weights)
-            sys.exit(0)
-
-        print()
-        if response == "y":
-            if weights[exercise - config["first_exercise"]] > 1:
-                weights[exercise - config["first_exercise"]] -= 1
-        elif response == "n":
-            weights[exercise - config["first_exercise"]] += 1
+def get_number_input(
+    prompt: str,
+    min_value: int | None = None,
+    max_value: int | None = None,
+) -> int:
+    """Prompt the user for a number input."""
+    while True:
+        response = input(prompt).strip()
+        if response.isdigit():
+            response = int(response)
+            if (min_value is None or response >= min_value) and (
+                max_value is None or response <= max_value
+            ):
+                return response
+        print("Invalid input.", end=" ")
+        if min_value is not None and max_value is not None:
+            print(f"Please enter a number between {min_value} and {max_value}.")
+        elif min_value is not None:
+            print(f"Please enter a number greater than or equal to {min_value}.")
+        elif max_value is not None:
+            print(f"Please enter a number less than or equal to {max_value}.")
         else:
-            raise ValueError("Unexpected response. This should never happen.")
+            print("Please enter a valid number.")
 
 
 if __name__ == "__main__":
