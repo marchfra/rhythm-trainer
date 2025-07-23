@@ -1,7 +1,9 @@
 import csv
+import math
 import random
 import subprocess
 import sys
+from dataclasses import dataclass
 from itertools import islice
 from pathlib import Path
 from typing import Any
@@ -9,56 +11,79 @@ from typing import Any
 import yaml
 
 CONFIG_FILE = Path("config.yaml")
-MAX_EXERCISES = 90  # Maximum number of exercises supported
+MAX_EXERCISES = 90  # Default maximum number of exercises supported
+
+
+@dataclass
+class Config:
+    csv_path: Path
+    first_exercise: int = 1
+    last_exercise: int = MAX_EXERCISES
+    backing_tracks_dir: Path | None = None
+    random_mode: bool = True
 
 
 def main() -> None:
     config = parse_config()
 
     exercises, weights = get_exercises_and_weights(
-        config["csv_path"],
-        config["first_exercise"],
-        config["last_exercise"],
+        config.csv_path,
+        config.first_exercise,
+        config.last_exercise,
+        verbose=True,
     )
 
-    random_mode = config.get("random_mode")
-
     while True:
-        if random_mode:
+        if config.random_mode:
             exercise = pick_random_exercise(exercises, weights)
         else:
             exercise = get_number_input(
                 "Enter the exercise number to play: ",
-                config["first_exercise"],
-                config["last_exercise"],
+                config.first_exercise,
+                config.last_exercise,
             )
             print()
 
         print(f"Play exercise {exercise}")
-        if config["backing_tracks_dir"]:
+        if config.backing_tracks_dir:
             input("Press Enter to play the backing track for this exercise...")
-            play_backing_track(exercise, config["backing_tracks_dir"])
+            play_backing_track(exercise, config.backing_tracks_dir)
 
         response = get_valid_input("Did you play it well? (y/n/q): ", ["y", "n", "q"])
 
         if response == "q":
-            save_exercises_and_weights(config["csv_path"], exercises, weights)
+            save_exercises_and_weights(
+                config.csv_path,
+                exercises,
+                weights,
+                verbose=True,
+            )
             sys.exit(0)
 
         print()
         if response == "y":
-            if weights[exercise - config["first_exercise"]] > 1:
-                weights[exercise - config["first_exercise"]] -= 1
+            if weights[exercise - config.first_exercise] > 1:
+                weights[exercise - config.first_exercise] -= 1
         elif response == "n":
-            weights[exercise - config["first_exercise"]] += 1
+            weights[exercise - config.first_exercise] += 1
         else:
             raise ValueError("Unexpected response.")
 
+        save_exercises_and_weights(config.csv_path, exercises, weights)
 
-def parse_config() -> dict[str, Any]:
+
+def parse_config() -> Config:
+    default_config = {
+        "csv_path": "exercises.csv",
+        "first_exercise": 1,
+        "last_exercise": MAX_EXERCISES,
+        "backing_tracks_dir": None,
+        "random_mode": True,
+    }
+
     if CONFIG_FILE.exists():
         with CONFIG_FILE.open("r") as file:
-            config: dict[str, Any] = yaml.safe_load(file)
+            config_data: dict[str, Any] = yaml.safe_load(file)
     else:
         raise FileNotFoundError(
             f"Configuration file {CONFIG_FILE} not found. Write a configuration file to"
@@ -66,37 +91,37 @@ def parse_config() -> dict[str, Any]:
             f"https://github.com/marchfra/caged-trainer.",
         )
 
-    if "csv_path" not in config:
+    if "csv_path" not in config_data:
         raise KeyError(
             "Configuration file is missing the 'csv_path' key. Please add it to the "
             "config file.",
         )
-    config["csv_path"] = Path(config["csv_path"])
 
-    if "first_exercise" not in config:
-        config["first_exercise"] = 1
-    if "last_exercise" not in config:
-        config["last_exercise"] = MAX_EXERCISES
-
-    if "backing_tracks_dir" not in config:
-        config["backing_tracks_dir"] = None
-    else:
-        config["backing_tracks_dir"] = Path(config["backing_tracks_dir"])
-        if not config["backing_tracks_dir"].is_dir():
+    if "backing_tracks_dir" in config_data:
+        backing_tracks_dir = Path(config_data["backing_tracks_dir"])
+        if not backing_tracks_dir.is_dir():
             raise FileNotFoundError(
-                f"Backing track file '{config['backing_tracks_dir']}' does not exist.",
+                f"Backing track directory '{config_data['backing_tracks_dir']}' "
+                f"does not exist.",
             )
+    else:
+        backing_tracks_dir = None
 
-    if "random_mode" not in config:
-        config["random_mode"] = True
-
-    return config
+    return Config(
+        csv_path=Path(config_data["csv_path"]),
+        first_exercise=config_data.get("first_exercise", 1),
+        last_exercise=config_data.get("last_exercise", MAX_EXERCISES),
+        backing_tracks_dir=backing_tracks_dir,
+        random_mode=config_data.get("random_mode", True),
+    )
 
 
 def get_exercises_and_weights(
     csv_path: Path,
     first_exercise: int,
     last_exercise: int,
+    *,
+    verbose: bool = False,
 ) -> tuple[list[int], list[int]]:
     """Read exercises and their weights from a CSV file within a specified range.
 
@@ -106,7 +131,8 @@ def get_exercises_and_weights(
     weight of 1 to each.
     """
     if csv_path.exists():
-        print(f"Found existing CSV file at {csv_path}.")
+        if verbose:
+            print(f"Found existing CSV file at {csv_path}.")
         exercises: list[int] = []
         weights: list[int] = []
         with csv_path.open("r") as file:
@@ -117,13 +143,16 @@ def get_exercises_and_weights(
                 weights.append(max(int(row[1]), 1))
 
         return exercises, weights
-    print(
-        f"No CSV file found at {csv_path}. Generating default exercises and weights.",
-    )
+
+    if verbose:
+        print(
+            f"No CSV file found at {csv_path}. "
+            f"Generating default exercises and weights.",
+        )
     num_exercises = last_exercise - first_exercise + 1
-    return list(range(1, last_exercise + 1)), [0] * (first_exercise - 1) + [
-        1,
-    ] * num_exercises
+    exercises = list(range(1, last_exercise + 1))
+    weights = [0] * (first_exercise - 1) + [1] * num_exercises
+    return exercises, weights
 
 
 def save_exercises_and_weights(
@@ -131,6 +160,8 @@ def save_exercises_and_weights(
     exercises: list[int],
     weights: list[int],
     total_exercises: int = MAX_EXERCISES,
+    *,
+    verbose: bool = False,
 ) -> None:
     """Save the weights of the exercises to a CSV file.
 
@@ -141,7 +172,8 @@ def save_exercises_and_weights(
     The CSV file will contain all exercises from 1 to `total_exercises`, each with their
     corresponding weight.
     """
-    print(f"Saving exercises and weights to CSV file {csv_path}")
+    if verbose:
+        print(f"Saving exercises and weights to CSV file {csv_path}")
     # Initialize all weights to 0 for exercises not in the CSV and read existing weights
     all_weights = dict.fromkeys(range(1, total_exercises + 1), 0)
     if csv_path.exists():
@@ -164,21 +196,33 @@ def save_exercises_and_weights(
             writer.writerow([exercise, weight])
 
 
+def map_weights(weights: list[int], sensitivity: float) -> list[float]:
+    """Apply exponential map to the weights, with parameter s.
+
+    Returns
+    -------
+        list[float] : the new weights
+
+    """
+    return [(math.exp(weight / max(weights)) - 1) ** sensitivity for weight in weights]
+
+
 def pick_random_exercise(
     exercises: list[int],
     weights: list[int],
-    ex_buffer: int = 10,
     buffer: list[int] = [],  # noqa: B006 - This is intended behavior
+    buffer_size: int = 10,
 ) -> int:
     """Select a single exercise from a list of exercises based on provided weights."""
     if not exercises:
         raise ValueError("The exercise list is empty.")
 
     exercise = random.choices(exercises, weights=weights, k=1)[0]
+
     while exercise in buffer:
         exercise = random.choices(exercises, weights=weights, k=1)[0]
     buffer.append(exercise)
-    if len(buffer) > ex_buffer:
+    if len(buffer) > buffer_size:
         buffer.pop(0)
 
     return exercise
