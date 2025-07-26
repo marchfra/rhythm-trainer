@@ -181,7 +181,9 @@ class MainWindow(QMainWindow):
                     self.config.backing_tracks_dir,
                     self.config.naming_scheme,
                     self.config.file_format,
-                ),
+                )
+                if self.config.backing_tracks_dir
+                else None,
             )
         self.tabs.addTab(self.random_mode, "Random Exercise")
         self.tabs.addTab(self.manual_mode, "Manual Input")
@@ -189,7 +191,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.tabs)
 
     def play_backing_track(self) -> None:
-        print(f"Playing backing track for exercise: {self.current_exercise}")
+        print(f"Playing backing track for exercise {self.current_exercise}.")
         self.bk_tracks_button.setEnabled(False)
 
         if (
@@ -300,6 +302,7 @@ class BaseModeWidget(QWidget):
         file_format: FileFormat,
     ) -> None:
         enable = False
+
         if self.current_exercise:
             enable = (
                 validate_backing_track(
@@ -382,6 +385,7 @@ class ManualModeWidget(BaseModeWidget):
 
         if text == "":
             self.exercise_input.setStyleSheet("")
+            self.current_exercise = None
 
     def get_exercise(self) -> int | None:
         if self.is_valid and self.current_exercise is not None:
