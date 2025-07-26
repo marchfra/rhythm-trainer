@@ -2,16 +2,30 @@ import csv
 import math
 import random
 import subprocess
-import sys
 from dataclasses import dataclass
+from enum import Enum
 from itertools import islice
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-CONFIG_FILE = Path("config.yaml")
+CONFIG_FILE = Path(".config.yaml")
 MAX_EXERCISES = 90  # Default maximum number of exercises supported
+
+
+class NamingScheme(Enum):
+    """Enum for naming conventions of backing tracks."""
+
+    DEFAULT = "default"
+    LOGICAL = "logical"
+
+
+class FileFormat(Enum):
+    """Enum for file formats of backing tracks."""
+
+    WAV = "wav"
+    MP3 = "mp3"
 
 
 @dataclass
@@ -20,100 +34,118 @@ class Config:
     first_exercise: int = 1
     last_exercise: int = MAX_EXERCISES
     backing_tracks_dir: Path | None = None
-    random_mode: bool = True
+    naming_scheme: NamingScheme = NamingScheme.DEFAULT
+    file_format: FileFormat = FileFormat.WAV
+
+    def to_dict(self) -> dict[str, str | int | None]:
+        """Convert the configuration to a dictionary with string representations."""
+        return {
+            "csv_path": str(self.csv_path),
+            "first_exercise": self.first_exercise,
+            "last_exercise": self.last_exercise,
+            "backing_tracks_dir": str(self.backing_tracks_dir)
+            if self.backing_tracks_dir
+            else None,
+            "naming_scheme": self.naming_scheme.value,
+            "file_format": self.file_format.value,
+        }
 
 
 def main() -> None:
-    config = parse_config()
+    ...
+    # config = parse_config()
 
-    exercises, weights = get_exercises_and_weights(
-        config.csv_path,
-        config.first_exercise,
-        config.last_exercise,
-        verbose=True,
-    )
+    # exercises, weights = get_exercises_and_weights(
+    #     config.csv_path,
+    #     config.first_exercise,
+    #     config.last_exercise,
+    #     verbose=True,
+    # )
 
-    while True:
-        if config.random_mode:
-            exercise = pick_random_exercise(exercises, weights)
-        else:
-            exercise = get_number_input(
-                "Enter the exercise number to play: ",
-                config.first_exercise,
-                config.last_exercise,
+    # buffer: list[int] = []
+
+    # while True:
+    #     if config.random_mode:
+    #         exercise = pick_random_exercise(exercises, weights, buffer)
+    #     else:
+    #         exercise = get_number_input(
+    #             "Enter the exercise number to play: ",
+    #             config.first_exercise,
+    #             config.last_exercise,
+    #         )
+    #         print()
+
+    #     print(f"Play exercise {exercise}")
+    #     if config.backing_tracks_dir:
+    #         input("Press Enter to play the backing track for this exercise...")
+    #         play_backing_track(
+    #             exercise,
+    #             config.backing_tracks_dir,
+    #             NamingScheme.LOGICAL,
+    #             "mp3",
+    #         )
+
+    #     response = get_valid_input("Did you play it well? (y/n/q): ", ["y", "n", "q"])
+
+    #     if response == "q":
+    #         save_exercises_and_weights(
+    #             config.csv_path,
+    #             exercises,
+    #             weights,
+    #             verbose=True,
+    #         )
+    #         sys.exit(0)
+
+    #     print()
+    #     if response == "y":
+    #         if weights[exercise - config.first_exercise] > 1:
+    #             weights[exercise - config.first_exercise] -= 1
+    #     elif response == "n":
+    #         weights[exercise - config.first_exercise] += 1
+    #     else:
+    #         raise ValueError("Unexpected response.")
+
+    #     save_exercises_and_weights(config.csv_path, exercises, weights)
+
+
+def parse_config(config_path: Path = CONFIG_FILE) -> Config:
+    if not config_path.exists():
+        print("Configuration file not found. Creating a default one.")
+        default_config = Config(csv_path=Path("exercises.csv"))
+        with config_path.open("w") as file:
+            yaml.safe_dump(default_config.to_dict(), file)
+        return default_config
+
+    print(f"Reading configuration from {config_path}")
+    with config_path.open("r") as file:
+        config_data: dict[str, Any] = yaml.safe_load(file)
+        if "csv_path" in config_data:
+            config_data["csv_path"] = Path(config_data["csv_path"])
+        if (
+            "backing_tracks_dir" in config_data
+            and config_data["backing_tracks_dir"] is not None
+        ):
+            config_data["backing_tracks_dir"] = Path(config_data["backing_tracks_dir"])
+        if "naming_scheme" in config_data:
+            config_data["naming_scheme"] = NamingScheme(
+                config_data["naming_scheme"].lower(),
             )
-            print()
-
-        print(f"Play exercise {exercise}")
-        if config.backing_tracks_dir:
-            input("Press Enter to play the backing track for this exercise...")
-            play_backing_track(exercise, config.backing_tracks_dir)
-
-        response = get_valid_input("Did you play it well? (y/n/q): ", ["y", "n", "q"])
-
-        if response == "q":
-            save_exercises_and_weights(
-                config.csv_path,
-                exercises,
-                weights,
-                verbose=True,
+        if "file_format" in config_data:
+            config_data["file_format"] = FileFormat(
+                config_data["file_format"].lower(),
             )
-            sys.exit(0)
+        config = Config(**config_data)
 
-        print()
-        if response == "y":
-            if weights[exercise - config.first_exercise] > 1:
-                weights[exercise - config.first_exercise] -= 1
-        elif response == "n":
-            weights[exercise - config.first_exercise] += 1
-        else:
-            raise ValueError("Unexpected response.")
-
-        save_exercises_and_weights(config.csv_path, exercises, weights)
-
-
-def parse_config() -> Config:
-    default_config = {
-        "csv_path": "exercises.csv",
-        "first_exercise": 1,
-        "last_exercise": MAX_EXERCISES,
-        "backing_tracks_dir": None,
-        "random_mode": True,
-    }
-
-    if CONFIG_FILE.exists():
-        with CONFIG_FILE.open("r") as file:
-            config_data: dict[str, Any] = yaml.safe_load(file)
-    else:
+    if (
+        config_data["backing_tracks_dir"]
+        and not config_data["backing_tracks_dir"].is_dir()
+    ):
         raise FileNotFoundError(
-            f"Configuration file {CONFIG_FILE} not found. Write a configuration file to"
-            f" use the app. For help on how to do that, see the README at "
-            f"https://github.com/marchfra/caged-trainer.",
+            f"Backing track directory '{config_data['backing_tracks_dir']}' "
+            f"does not exist.",
         )
 
-    if "csv_path" not in config_data:
-        raise KeyError(
-            "Configuration file is missing the 'csv_path' key. Please add it to the "
-            "config file.",
-        )
-
-    if "backing_tracks_dir" in config_data:
-        backing_tracks_dir = Path(config_data["backing_tracks_dir"])
-        if not backing_tracks_dir.is_dir():
-            raise FileNotFoundError(
-                f"Backing track directory '{config_data['backing_tracks_dir']}' "
-                f"does not exist.",
-            )
-    else:
-        backing_tracks_dir = None
-
-    return Config(
-        csv_path=Path(config_data["csv_path"]),
-        first_exercise=config_data.get("first_exercise", 1),
-        last_exercise=config_data.get("last_exercise", MAX_EXERCISES),
-        backing_tracks_dir=backing_tracks_dir,
-        random_mode=config_data.get("random_mode", True),
-    )
+    return config
 
 
 def get_exercises_and_weights(
@@ -167,10 +199,10 @@ def save_exercises_and_weights(
 
     If the CSV file exists, it reads the current weights and updates them with the
     provided values.
-    If the CSV file does not exist, it initializes all exercise weights to 0 and sets
-    the provided weights.
-    The CSV file will contain all exercises from 1 to `total_exercises`, each with their
-    corresponding weight.
+    If the CSV file does not exist, it creates it and then initializes all exercise
+    weights to 0 and sets the provided weights.
+    The created CSV file will contain all exercises from 1 to `total_exercises`, each
+    with their corresponding weight.
     """
     if verbose:
         print(f"Saving exercises and weights to CSV file {csv_path}")
@@ -210,25 +242,47 @@ def map_weights(weights: list[int], sensitivity: float) -> list[float]:
 def pick_random_exercise(
     exercises: list[int],
     weights: list[int],
-    buffer: list[int] = [],  # noqa: B006 - This is intended behavior
+    buffer: list[int] | None = None,
     buffer_size: int = 10,
 ) -> int:
-    """Select a single exercise from a list of exercises based on provided weights."""
+    """Select a single exercise from a list of exercises based on provided weights.
+
+    The selection is done randomly, with the probability of each exercise being
+    proportional to its weight. The function ensures that the selected exercise is not
+    already in the buffer, which is a list of recently selected exercises. If the
+    buffer is full, the oldest exercise is removed to make space for the new one.
+    """
+    if buffer is None:
+        buffer = []
     if not exercises:
         raise ValueError("The exercise list is empty.")
 
-    exercise = random.choices(exercises, weights=weights, k=1)[0]
-
-    while exercise in buffer:
+    attempts = 0
+    max_attempts = 100
+    while attempts < max_attempts:
         exercise = random.choices(exercises, weights=weights, k=1)[0]
-    buffer.append(exercise)
-    if len(buffer) > buffer_size:
-        buffer.pop(0)
+        if exercise not in buffer:
+            buffer.append(exercise)
+            if len(buffer) > buffer_size:
+                buffer.pop(0)
+            return exercise
+        attempts += 1
 
-    return exercise
+    raise RuntimeError(
+        f"Failed to select a unique exercise after {max_attempts} attempts.",
+    )
 
 
-def play_backing_track(exercise: int, backing_tracks_dir: Path) -> None:
+def validate_backing_track(
+    exercise: int,
+    backing_tracks_dir: Path,
+    naming_convention: NamingScheme = NamingScheme.DEFAULT,
+    file_format: FileFormat = FileFormat.WAV,
+) -> Path | None:
+    """Check if the backing track for a given exercise exists.
+
+    Returns the backing track's Path if it exists, None otherwise.
+    """
     subdirs = [
         "Acoustic",
         "Classic Blues",
@@ -241,21 +295,59 @@ def play_backing_track(exercise: int, backing_tracks_dir: Path) -> None:
         "Soul",
     ]
 
-    folder = backing_tracks_dir / subdirs[(exercise - 1) // 10]
-    if not folder.is_dir():
-        raise FileNotFoundError(
-            f"Backing track folder '{folder}' does not exist. Please check your "
-            "configuration.",
+    chapter_folder = backing_tracks_dir / subdirs[(exercise - 1) // 10]
+    if not chapter_folder.is_dir():
+        return None
+
+    if naming_convention == NamingScheme.LOGICAL:
+        track_path = (
+            chapter_folder
+            / f"BK {chapter_folder.name} {exercise:02d}.{file_format.value}"
+        )
+    elif naming_convention == NamingScheme.DEFAULT:
+        track_path = (
+            chapter_folder
+            / f"{chapter_folder.name} {exercise:02d} BK.{file_format.value}"
+        )
+    else:
+        raise ValueError(
+            f"Unsupported naming convention: {naming_convention}. "
+            f"Use one of {[f'NamingConvention.{e.name}' for e in NamingScheme]}",
         )
 
-    track_path = folder / f"BK {folder.name} {exercise:02d}.mp3"
-    if not track_path.is_file():
+    return track_path if track_path.is_file() else None
+
+
+def play_backing_track(
+    exercise: int,
+    backing_tracks_dir: Path,
+    naming_convention: NamingScheme = NamingScheme.DEFAULT,
+    file_format: FileFormat = FileFormat.WAV,
+    *,
+    verbose: bool = False,
+) -> None:
+    """Play the backing track for a given exercise.
+
+    This function locates the backing track file based on the exercise number,
+    backing tracks directory, naming convention, and file type. If the file is found,
+    it opens the track using the system's default application, otherwise it raises a
+    FileNotFoundError.
+    """
+    track_path = validate_backing_track(
+        exercise,
+        backing_tracks_dir,
+        naming_convention,
+        file_format,
+    )
+
+    if track_path is None:
         raise FileNotFoundError(
-            f"Backing track file '{track_path}' does not exist. Please check your "
-            "configuration.",
+            f"Backing track {track_path} for exercise {exercise} not found in directory"
+            f" {backing_tracks_dir}. Please check your configuration.",
         )
 
-    print(f"Playing backing track '{track_path.name}'")
+    if verbose:
+        print(f"Playing backing track '{track_path.name}'")
     subprocess.Popen(  # noqa: S603
         ["/usr/bin/open", str(track_path)],
         stdout=subprocess.DEVNULL,

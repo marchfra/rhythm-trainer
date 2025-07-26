@@ -1,0 +1,31 @@
+QLabel {
+    font-size: 24px;
+}
+
+QLabel#question {
+    font-size: 32px;
+    font: bold;
+}
+
+QLabel#input_label {
+    font-size: 28px;
+    font: bold;
+}
+
+
+QPushButton {
+    font-size: 24px;
+    border-radius: 10px;
+}
+
+QPushButton#bk_tracks_button {
+    background-color: #2196f3;
+}
+
+QPushButton#good_button {
+    background-color: #4caf4f;
+}
+
+QPushButton#bad_button {
+    background-color: #f44336;
+}

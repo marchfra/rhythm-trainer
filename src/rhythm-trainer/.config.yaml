@@ -1,0 +1,7 @@
+backing_tracks_dir: /Users/francescomarchisotti/Music/Lizard/Ritmiche e Stili della Chitarra Moderna (Normalized)
+# backing_tracks_dir: null
+csv_path: exercises.csv
+first_exercise: 12
+last_exercise: 83
+naming_scheme: logical
+file_format: mp3
