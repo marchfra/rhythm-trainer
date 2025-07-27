@@ -9,12 +9,9 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from rhythm_trainer.main import (
-    FileFormat,
-    NamingScheme,
-    pick_random_exercise,
-    validate_backing_track,
-)
+from rhythm_trainer.config import FileFormat, NamingScheme
+from rhythm_trainer.exercises import pick_random_exercise
+from rhythm_trainer.tracks import validate_backing_track
 
 from .widgets import NumberOnlyLineEdit
 

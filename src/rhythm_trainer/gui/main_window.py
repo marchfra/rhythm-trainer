@@ -14,12 +14,12 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from rhythm_trainer.main import (
+from rhythm_trainer.config import parse_config
+from rhythm_trainer.exercises import (
     get_exercises_and_weights,
-    parse_config,
-    play_backing_track,
     save_exercises_and_weights,
 )
+from rhythm_trainer.tracks import play_backing_track
 
 from .modes import ManualModeWidget, RandomModeWidget
 
