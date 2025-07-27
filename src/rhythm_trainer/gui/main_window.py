@@ -1,6 +1,5 @@
 from pathlib import Path
 
-from modes import ManualModeWidget, RandomModeWidget
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
@@ -22,13 +21,15 @@ from rhythm_trainer.main import (
     save_exercises_and_weights,
 )
 
+from .modes import ManualModeWidget, RandomModeWidget
+
 TEST_MODE = True
 
 
 def main() -> None:
     app = QApplication([])
 
-    with Path("src/rhythm_trainer/style.qss").open("r") as style_file:
+    with Path("rhythm_trainer/gui/style.qss").open("r") as style_file:
         _style = style_file.read()
         app.setStyleSheet(_style)
 

@@ -1,6 +1,5 @@
 from pathlib import Path
 
-from main import FileFormat, NamingScheme, pick_random_exercise, validate_backing_track
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIntValidator
 from PyQt6.QtWidgets import (
@@ -9,7 +8,15 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from widgets import NumberOnlyLineEdit
+
+from rhythm_trainer.main import (
+    FileFormat,
+    NamingScheme,
+    pick_random_exercise,
+    validate_backing_track,
+)
+
+from .widgets import NumberOnlyLineEdit
 
 
 class BaseModeWidget(QWidget):

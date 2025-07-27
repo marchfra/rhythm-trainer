@@ -1,9 +1,10 @@
 from collections.abc import Callable
 
-from main import MAX_EXERCISES
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIntValidator, QKeyEvent
 from PyQt6.QtWidgets import QLineEdit, QWidget
+
+from rhythm_trainer.main import MAX_EXERCISES
 
 type ButtonClickFn = Callable[[], None]
 
