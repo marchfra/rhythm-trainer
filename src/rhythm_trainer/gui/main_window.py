@@ -1,30 +1,25 @@
-from collections.abc import Callable
 from pathlib import Path
 
-from main import (
-    MAX_EXERCISES,
-    FileFormat,
-    NamingScheme,
-    get_exercises_and_weights,
-    parse_config,
-    pick_random_exercise,
-    play_backing_track,
-    save_exercises_and_weights,
-    validate_backing_track,
-)
+from modes import ManualModeWidget, RandomModeWidget
 from PyQt6.QtCore import QSize, Qt
-from PyQt6.QtGui import QIntValidator, QKeyEvent, QKeySequence, QShortcut
+from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QApplication,
     QHBoxLayout,
     QLabel,
     QLayout,
-    QLineEdit,
     QMainWindow,
     QPushButton,
     QTabWidget,
     QVBoxLayout,
     QWidget,
+)
+
+from rhythm_trainer.main import (
+    get_exercises_and_weights,
+    parse_config,
+    play_backing_track,
+    save_exercises_and_weights,
 )
 
 TEST_MODE = True
@@ -33,7 +28,7 @@ TEST_MODE = True
 def main() -> None:
     app = QApplication([])
 
-    with Path("style.qss").open("r") as style_file:
+    with Path("src/rhythm_trainer/style.qss").open("r") as style_file:
         _style = style_file.read()
         app.setStyleSheet(_style)
 
@@ -280,154 +275,6 @@ class MainWindow(QMainWindow):
         exercise = self.manual_mode.get_exercise()
         if exercise is not None:
             self.current_exercise = exercise
-
-
-class BaseModeWidget(QWidget):
-    def __init__(
-        self,
-        bk_tracks_button: QPushButton,
-        parent: QWidget | None = None,
-    ) -> None:
-        super().__init__(parent)
-
-        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-
-        self.bk_tracks_button = bk_tracks_button
-        self.current_exercise: int | None = None
-
-    def enable_bk_track_button(
-        self,
-        backing_tracks_dir: Path,
-        naming_scheme: NamingScheme,
-        file_format: FileFormat,
-    ) -> None:
-        enable = False
-
-        if self.current_exercise:
-            enable = (
-                validate_backing_track(
-                    self.current_exercise,
-                    backing_tracks_dir,
-                    naming_scheme,
-                    file_format,
-                )
-                is not None
-            )
-
-        self.bk_tracks_button.setEnabled(enable)
-
-
-class RandomModeWidget(BaseModeWidget):
-    def __init__(
-        self,
-        bk_tracks_button: QPushButton,
-        parent: QWidget | None = None,
-    ) -> None:
-        super().__init__(bk_tracks_button, parent)
-
-        layout = QVBoxLayout(self)
-        self.exercise_label = QLabel()
-        self.exercise_label.setObjectName("question")
-        self.exercise_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.exercise_label.setFixedHeight(30)
-        layout.addWidget(self.exercise_label)
-
-    def pick_exercise(
-        self,
-        exercises: list[int],
-        weights: list[int],
-        buffer: list[int],
-    ) -> int:
-        self.current_exercise = pick_random_exercise(exercises, weights, buffer)
-        self.exercise_label.setText(f"Exercise #{self.current_exercise}")
-        return self.current_exercise
-
-
-class ManualModeWidget(BaseModeWidget):
-    def __init__(
-        self,
-        bk_tracks_button: QPushButton,
-        first_exercise: int,
-        last_exercise: int,
-        parent: QWidget | None = None,
-    ) -> None:
-        super().__init__(bk_tracks_button, parent)
-
-        layout = QVBoxLayout(self)
-        input_label = QLabel("Enter an exercise")
-        input_label.setObjectName("input_label")
-        input_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        input_label.setFixedHeight(30)
-        layout.addWidget(input_label)
-
-        self.exercise_input = NumberOnlyLineEdit(first_exercise, last_exercise)
-        self.exercise_input.setObjectName("exercise_input")
-        self.exercise_input.textChanged.connect(self._validate_exercise_input)
-        self.exercise_input.setPlaceholderText(
-            f"Exercise range: {first_exercise} - {last_exercise}",
-        )
-        layout.addWidget(self.exercise_input)
-
-    def _validate_exercise_input(self, text: str) -> None:
-        validator = self.exercise_input.validator()
-        if not validator:
-            return
-
-        state = validator.validate(text, 0)[0]
-        if state != QIntValidator.State.Acceptable:
-            self.exercise_input.setStyleSheet("color: red;")
-            self.is_valid = False
-        else:
-            self.current_exercise = int(text)
-            self.exercise_input.setStyleSheet("")
-            if text != "":
-                self.is_valid = True
-
-        if text == "":
-            self.exercise_input.setStyleSheet("")
-            self.current_exercise = None
-
-    def get_exercise(self) -> int | None:
-        if self.is_valid and self.current_exercise is not None:
-            return self.current_exercise
-        return None
-
-
-type ButtonClickFn = Callable[[], None]
-
-
-class NumberOnlyLineEdit(QLineEdit):
-    def __init__(
-        self,
-        first_exercise: int = 1,
-        last_exercise: int = MAX_EXERCISES,
-        contents: str | None = None,
-        parent: QWidget | None = None,
-    ) -> None:
-        super().__init__(contents if contents is not None else "", parent)
-        validator = QIntValidator()
-        validator.setRange(first_exercise, last_exercise)
-        self.setValidator(validator)
-        self._good_callback: ButtonClickFn | None = None
-        self._bad_callback: ButtonClickFn | None = None
-
-    def set_shortcut_callbacks(
-        self,
-        good_callback: ButtonClickFn,
-        bad_callback: ButtonClickFn,
-    ) -> None:
-        self._good_callback = good_callback
-        self._bad_callback = bad_callback
-
-    def keyPressEvent(self, a0: QKeyEvent | None) -> None:  # noqa: N802
-        if a0 is None:
-            return
-        if a0.key() == Qt.Key.Key_Plus and self._good_callback:
-            self._good_callback()
-        elif a0.key() == Qt.Key.Key_Minus and self._bad_callback:
-            self._bad_callback()
-        else:
-            super().keyPressEvent(a0)
 
 
 if __name__ == "__main__":
