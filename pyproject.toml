@@ -15,11 +15,17 @@ dependencies = [
     "pyyaml>=6.0.2",
 ]
 
+[project.scripts]
+main = "rhythm_trainer.main:main"
+
+[project.gui-scripts]
+gui = "rhythm_trainer.gui.main_window:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [dependency-groups]
 dev = [
     "pytest>=8.4.1",
-    "rhythm-trainer",
 ]
-
-[tool.uv.sources]
-rhythm-trainer = { workspace = true }

@@ -227,6 +227,4 @@ pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,visualstudiocode,python
 
-config.yaml
-database.csv
-test.csv
+my_database.csv
