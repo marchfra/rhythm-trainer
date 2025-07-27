@@ -9,8 +9,10 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from platformdirs import user_config_dir
 
-CONFIG_FILE = Path(".config.yaml")
+APP_NAME = "rhythm_trainer"
+CONFIG_FILENAME = ".config.yaml"
 MAX_EXERCISES = 90  # Default maximum number of exercises supported
 
 
@@ -108,7 +110,14 @@ def main() -> None:
     #     save_exercises_and_weights(config.csv_path, exercises, weights)
 
 
-def parse_config(config_path: Path = CONFIG_FILE) -> Config:
+def get_config_path(config_filename: str) -> Path:
+    config_dir = Path(user_config_dir(APP_NAME))
+    config_dir.mkdir(parents=True, exist_ok=True)
+    return config_dir / config_filename
+
+
+def parse_config(config_filename: str = CONFIG_FILENAME) -> Config:
+    config_path = get_config_path(config_filename)
     if not config_path.exists():
         print("Configuration file not found. Creating a default one.")
         default_config = Config(csv_path=Path("exercises.csv"))
