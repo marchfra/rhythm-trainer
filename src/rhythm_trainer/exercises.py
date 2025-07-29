@@ -1,5 +1,4 @@
 import csv
-import math
 import random
 from itertools import islice
 from pathlib import Path
@@ -82,17 +81,6 @@ def save_exercises_and_weights(
             writer.writerow([exercise, weight])
 
 
-def map_weights(weights: list[int], sensitivity: float) -> list[float]:
-    """Apply exponential map to the weights, with parameter s.
-
-    Returns
-    -------
-        list[float] : the new weights
-
-    """
-    return [(math.exp(weight / max(weights)) - 1) ** sensitivity for weight in weights]
-
-
 def pick_random_exercise(
     exercises: list[int],
     weights: list[int],
@@ -108,10 +96,6 @@ def pick_random_exercise(
     """
     if buffer is None:
         buffer = []
-    if not exercises:
-        error_message = "The exercise list is empty."
-        logger.error(error_message)
-        raise ValueError(error_message)
 
     attempts = 0
     max_attempts = 100
@@ -119,13 +103,11 @@ def pick_random_exercise(
         exercise = random.choices(exercises, weights=weights, k=1)[0]
         if exercise not in buffer:
             buffer.append(exercise)
-            if len(buffer) > buffer_size:
-                buffer.pop(0)
             return exercise
+        if len(buffer) >= buffer_size:
+            buffer.pop(0)
         attempts += 1
 
-    error_message = (
-        f"Failed to select a unique exercise after {max_attempts} attempts. "
-    )
+    error_message = f"Failed to select a unique exercise after {max_attempts} attempts."
     logger.error(error_message)
     raise RuntimeError(error_message)
