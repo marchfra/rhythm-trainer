@@ -27,6 +27,28 @@ class FileFormat(Enum):
 
 @dataclass
 class Config:
+    """Configuration dataclass for rhythm trainer settings.
+
+    Attributes:
+        csv_path : Path
+            Path to the CSV file containing exercise data.
+        first_exercise : int
+            Index of the first exercise to use (default: 1).
+        last_exercise : int
+            Index of the last exercise to use (default: MAX_EXERCISES).
+        backing_tracks_dir : Path | None
+            Directory containing backing tracks, or None.
+        naming_scheme : NamingScheme
+            Naming scheme for output files.
+        file_format : FileFormat
+            Audio file format for output files.
+
+    Methods:
+        to_dict():
+            Convert the configuration to a dictionary with string representations.
+
+    """
+
     csv_path: Path
     first_exercise: int = 1
     last_exercise: int = MAX_EXERCISES
@@ -49,12 +71,26 @@ class Config:
 
 
 def get_config_path(config_filename: str) -> Path:
+    """Return the full path to the configuration file within the user's config dir.
+
+    Creates the config directory if it does not exist.
+    """
     config_dir = Path(user_config_dir(APP_NAME))
     config_dir.mkdir(parents=True, exist_ok=True)
     return config_dir / config_filename
 
 
 def parse_config(config_filename: str = CONFIG_FILENAME) -> Config:
+    """Parse the configuration file and return a Config object.
+
+    If the configuration file does not exist, create a default configuration file
+    and return the default Config instance. Otherwise, read the configuration
+    from the file, process its fields, and return a Config object.
+
+    Raises:
+        FileNotFoundError: If the specified backing tracks directory does not exist.
+
+    """
     config_path = get_config_path(config_filename)
     if not config_path.exists():
         print("Configuration file not found. Creating a default one.")
@@ -96,6 +132,7 @@ def parse_config(config_filename: str = CONFIG_FILENAME) -> Config:
 
 
 def save_config(config: Config, config_filename: str = CONFIG_FILENAME) -> None:
+    """Save the given configuration to a YAML file."""
     config_path = get_config_path(config_filename)
     with config_path.open("w") as file:
         yaml.safe_dump(config.to_dict(), file)
