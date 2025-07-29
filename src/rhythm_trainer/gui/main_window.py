@@ -21,11 +21,13 @@ from rhythm_trainer.exercises import (
     get_exercises_and_weights,
     save_exercises_and_weights,
 )
+from rhythm_trainer.gui.modes import BaseModeWidget, ManualModeWidget, RandomModeWidget
 from rhythm_trainer.gui.settings_dialog import SettingsDialog
+from rhythm_trainer.logger import get_logger
 from rhythm_trainer.tracks import play_backing_track
 from rhythm_trainer.utils import infer_file_format, infer_naming_scheme
 
-from .modes import BaseModeWidget, ManualModeWidget, RandomModeWidget
+logger = get_logger(__name__)
 
 TEST_MODE = True
 
@@ -309,7 +311,7 @@ class MainWindow(QMainWindow):
         the 'good' and 'bad' buttons afterwards. Does nothing if TEST_MODE is active or
         no exercise is selected.
         """
-        print(f"Playing backing track for exercise {self.current_exercise}.")
+        logger.info(f"Playing backing track for exercise {self.current_exercise}.")
         self.bk_tracks_button.setEnabled(False)
 
         if (
@@ -333,7 +335,7 @@ class MainWindow(QMainWindow):
         Decreases the weight of the current exercise if possible, saves the updated
         weights and exercises to the CSV file, and advances to the next exercise.
         """
-        print(f"Good feedback received on exercise {self.current_exercise}.")
+        logger.info(f"Good feedback received on exercise {self.current_exercise}.")
         if self.current_exercise is not None:
             if self.weights[self.current_exercise - self.config.first_exercise] > 1:
                 self.weights[self.current_exercise - self.config.first_exercise] -= 1
@@ -350,7 +352,7 @@ class MainWindow(QMainWindow):
         Increments the weight for the current exercise, saves the updated exercises and
         weights to the CSV file, and advances to the next exercise.
         """
-        print(f"Bad feedback received on exercise {self.current_exercise}.")
+        logger.info(f"Bad feedback received on exercise {self.current_exercise}.")
         if self.current_exercise is not None:
             self.weights[self.current_exercise - self.config.first_exercise] += 1
             save_exercises_and_weights(
@@ -384,7 +386,9 @@ class MainWindow(QMainWindow):
             if self.current_exercise is not None:
                 self._enable_buttons(self.manual_mode)
         else:
-            raise ValueError("Invalid tab index. This should never happen.")
+            error_message = "Invalid tab index. This should never happen."
+            logger.error(error_message)
+            raise ValueError(error_message)
 
     def _settings(self) -> None:
         settings = SettingsDialog()

@@ -1,6 +1,5 @@
 from pathlib import Path
 
-from platformdirs import user_data_dir, user_downloads_dir
 from PyQt6.QtCore import QSize
 from PyQt6.QtWidgets import (
     QDialog,
@@ -14,7 +13,8 @@ from PyQt6.QtWidgets import (
     QSpinBox,
 )
 
-from rhythm_trainer.config import APP_NAME, Config
+from rhythm_trainer import dirs
+from rhythm_trainer.config import Config
 
 
 class SettingsDialog(QDialog):
@@ -81,7 +81,7 @@ class SettingsDialog(QDialog):
         file_dialog = QFileDialog(
             self,
             caption="Create new CSV file",
-            directory=user_data_dir(APP_NAME),
+            directory=dirs.user_data_dir,
             filter="CSV Files (*.csv)",
         )
         file_dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
@@ -100,7 +100,7 @@ class SettingsDialog(QDialog):
         file_dialog = QFileDialog(
             self,
             caption="Select or enter CSV file",
-            directory=user_data_dir(APP_NAME),
+            directory=dirs.user_data_dir,
             filter="CSV Files (*.csv)",
         )
         file_dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptOpen)
@@ -119,7 +119,7 @@ class SettingsDialog(QDialog):
         dir_dialog = QFileDialog(
             self,
             caption="Select or enter backing tracks directory",
-            directory=user_downloads_dir(),
+            directory=dirs.user_downloads_dir,
             filter="Directories",
         )
         dir_dialog.setFileMode(QFileDialog.FileMode.Directory)

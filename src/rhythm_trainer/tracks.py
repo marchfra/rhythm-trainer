@@ -2,6 +2,9 @@ import subprocess
 from pathlib import Path
 
 from rhythm_trainer.config import FileFormat, NamingScheme
+from rhythm_trainer.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def validate_backing_track(
@@ -53,8 +56,6 @@ def play_backing_track(
     backing_tracks_dir: Path,
     naming_convention: NamingScheme = NamingScheme.DEFAULT,
     file_format: FileFormat = FileFormat.WAV,
-    *,
-    verbose: bool = False,
 ) -> None:
     """Play the backing track for a given exercise.
 
@@ -71,13 +72,14 @@ def play_backing_track(
     )
 
     if track_path is None:
-        raise FileNotFoundError(
-            f"Backing track {track_path} for exercise {exercise} not found in directory"
-            f" {backing_tracks_dir}. Please check your configuration.",
+        error_message = (
+            f"Backing track for exercise {exercise} not found in directory "
+            f"{backing_tracks_dir}. Please check your configuration."
         )
+        logger.error(error_message)
+        raise FileNotFoundError(error_message)
 
-    if verbose:
-        print(f"Playing backing track '{track_path.name}'")
+    logger.info(f"Playing backing track '{track_path.name}'")
     subprocess.Popen(  # noqa: S603
         ["/usr/bin/open", str(track_path)],
         stdout=subprocess.DEVNULL,

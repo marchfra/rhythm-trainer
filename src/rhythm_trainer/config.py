@@ -4,11 +4,14 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from platformdirs import user_config_dir, user_data_dir
 
-APP_NAME = "rhythm_trainer"
+from rhythm_trainer import dirs
+from rhythm_trainer.logger import get_logger
+
 CONFIG_FILENAME = "config.yaml"
 MAX_EXERCISES = 90  # Default maximum number of exercises supported
+
+logger = get_logger(__name__)
 
 
 class NamingScheme(Enum):
@@ -75,7 +78,7 @@ def get_config_path(config_filename: str) -> Path:
 
     Creates the config directory if it does not exist.
     """
-    config_dir = Path(user_config_dir(APP_NAME))
+    config_dir = Path(dirs.user_config_dir)
     config_dir.mkdir(parents=True, exist_ok=True)
     return config_dir / config_filename
 
@@ -93,13 +96,13 @@ def parse_config(config_filename: str = CONFIG_FILENAME) -> Config:
     """
     config_path = get_config_path(config_filename)
     if not config_path.exists():
-        print("Configuration file not found. Creating a default one.")
-        default_config = Config(csv_path=Path(user_data_dir() + "/exercises.csv"))
+        logger.info("Configuration file not found. Creating a default one.")
+        default_config = Config(csv_path=Path(dirs.user_data_dir + "/exercises.csv"))
         with config_path.open("w") as file:
             yaml.safe_dump(default_config.to_dict(), file)
         return default_config
 
-    print(f"Reading configuration from {config_path}")
+    logger.info(f"Reading configuration from {config_path}")
     with config_path.open("r") as file:
         config_data: dict[str, Any] = yaml.safe_load(file)
         if "csv_path" in config_data:
@@ -123,10 +126,12 @@ def parse_config(config_filename: str = CONFIG_FILENAME) -> Config:
         config_data["backing_tracks_dir"]
         and not config_data["backing_tracks_dir"].is_dir()
     ):
-        raise FileNotFoundError(
+        error_message = (
             f"Backing track directory '{config_data['backing_tracks_dir']}' "
             f"does not exist.",
         )
+        logger.error(error_message)
+        raise FileNotFoundError(error_message)
 
     return config
 

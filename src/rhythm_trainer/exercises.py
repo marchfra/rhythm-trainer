@@ -4,15 +4,16 @@ import random
 from itertools import islice
 from pathlib import Path
 
-from .config import MAX_EXERCISES
+from rhythm_trainer.config import MAX_EXERCISES
+from rhythm_trainer.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def get_exercises_and_weights(
     csv_path: Path,
     first_exercise: int,
     last_exercise: int,
-    *,
-    verbose: bool = False,
 ) -> tuple[list[int], list[int]]:
     """Read exercises and their weights from a CSV file within a specified range.
 
@@ -22,8 +23,7 @@ def get_exercises_and_weights(
     weight of 1 to each.
     """
     if csv_path.exists():
-        if verbose:
-            print(f"Found existing CSV file at {csv_path}.")
+        logger.info(f"Found existing CSV file at {csv_path}.")
         exercises: list[int] = []
         weights: list[int] = []
         with csv_path.open("r") as file:
@@ -35,11 +35,9 @@ def get_exercises_and_weights(
 
         return exercises, weights
 
-    if verbose:
-        print(
-            f"No CSV file found at {csv_path}. "
-            f"Generating default exercises and weights.",
-        )
+    logger.info(
+        f"No CSV file found at {csv_path}. Generating default exercises and weights.",
+    )
     num_exercises = last_exercise - first_exercise + 1
     exercises = list(range(1, last_exercise + 1))
     weights = [0] * (first_exercise - 1) + [1] * num_exercises
@@ -51,8 +49,6 @@ def save_exercises_and_weights(
     exercises: list[int],
     weights: list[int],
     total_exercises: int = MAX_EXERCISES,
-    *,
-    verbose: bool = False,
 ) -> None:
     """Save the weights of the exercises to a CSV file.
 
@@ -63,8 +59,7 @@ def save_exercises_and_weights(
     The created CSV file will contain all exercises from 1 to `total_exercises`, each
     with their corresponding weight.
     """
-    if verbose:
-        print(f"Saving exercises and weights to CSV file {csv_path}")
+    logger.info(f"Saving exercises and weights to CSV file {csv_path}")
     # Initialize all weights to 0 for exercises not in the CSV and read existing weights
     all_weights = dict.fromkeys(range(1, total_exercises + 1), 0)
     if csv_path.exists():
@@ -114,7 +109,9 @@ def pick_random_exercise(
     if buffer is None:
         buffer = []
     if not exercises:
-        raise ValueError("The exercise list is empty.")
+        error_message = "The exercise list is empty."
+        logger.error(error_message)
+        raise ValueError(error_message)
 
     attempts = 0
     max_attempts = 100
@@ -127,6 +124,8 @@ def pick_random_exercise(
             return exercise
         attempts += 1
 
-    raise RuntimeError(
-        f"Failed to select a unique exercise after {max_attempts} attempts.",
+    error_message = (
+        f"Failed to select a unique exercise after {max_attempts} attempts. "
     )
+    logger.error(error_message)
+    raise RuntimeError(error_message)

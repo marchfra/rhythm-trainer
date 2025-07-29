@@ -1,6 +1,9 @@
 from pathlib import Path
 
 from rhythm_trainer.config import FileFormat, NamingScheme
+from rhythm_trainer.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def get_valid_input(prompt: str, valid_responses: list[str]) -> str:
@@ -44,10 +47,12 @@ def infer_file_format(bk_tracks_dir: Path) -> FileFormat:
     """Infer the file format from the file extension."""
     acoustic_dir = bk_tracks_dir / "Acoustic"
     if not acoustic_dir.is_dir():
-        raise FileNotFoundError(
+        error_message = (
             f"Backing tracks directory {bk_tracks_dir} does not contain an 'Acoustic' "
             f"subdirectory.",
         )
+        logger.error(error_message)
+        raise FileNotFoundError(error_message)
 
     for file in acoustic_dir.iterdir():
         if file.is_file():
@@ -55,14 +60,19 @@ def infer_file_format(bk_tracks_dir: Path) -> FileFormat:
                 return FileFormat.MP3
             if file.suffix.lower() == ".wav":
                 return FileFormat.WAV
-            raise ValueError(
+
+            error_message = (
                 f"Unsupported file format: {file.suffix}. "
                 f"Supported formats are {[f'.{e.value}' for e in FileFormat]}",
             )
+            logger.error(error_message)
+            raise ValueError(error_message)
 
-    raise FileNotFoundError(
+    error_message = (
         f"No backing tracks found in {bk_tracks_dir} with a recognizable file format.",
     )
+    logger.error(error_message)
+    raise FileNotFoundError(error_message)
 
 
 def infer_naming_scheme(bk_tracks_dir: Path) -> NamingScheme:

@@ -11,9 +11,8 @@ from PyQt6.QtWidgets import (
 
 from rhythm_trainer.config import FileFormat, NamingScheme
 from rhythm_trainer.exercises import pick_random_exercise
+from rhythm_trainer.gui.widgets import NumberOnlyLineEdit
 from rhythm_trainer.tracks import validate_backing_track
-
-from .widgets import NumberOnlyLineEdit
 
 
 class BaseModeWidget(QWidget):
