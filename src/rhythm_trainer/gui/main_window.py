@@ -5,7 +5,7 @@ from pathlib import Path
 from PyQt6.QtCore import QObject, QSize, Qt
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
-    QApplication,
+    QDialog,
     QHBoxLayout,
     QLabel,
     QLayout,
@@ -16,12 +16,14 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from rhythm_trainer.config import parse_config
+from rhythm_trainer.config import Config, parse_config, save_config
 from rhythm_trainer.exercises import (
     get_exercises_and_weights,
     save_exercises_and_weights,
 )
+from rhythm_trainer.gui.settings_dialog import SettingsDialog
 from rhythm_trainer.tracks import play_backing_track
+from rhythm_trainer.utils import infer_file_format, infer_naming_scheme
 
 from .modes import BaseModeWidget, ManualModeWidget, RandomModeWidget
 
@@ -29,7 +31,7 @@ TEST_MODE = True
 
 # --- UI Constants ---
 WINDOW_TITLE = "Rhythm Trainer"
-WINDOW_SIZE = (350, 400)
+WINDOW_SIZE = (350, 425)
 MARGIN = 30
 BK_BUTTON_TEXT = "Play backing track"
 BK_BUTTON_SIZE = (250, 50)
@@ -42,19 +44,6 @@ FEEDBACK_BUTTON_SIZE = 100, 50
 STYLE_FILE = "style.qss"
 SHORTCUT_TAB1 = "Ctrl+1"
 SHORTCUT_TAB2 = "Ctrl+2"
-
-
-def main() -> None:
-    app = QApplication([])
-
-    style_file_path = Path(__file__).parent / STYLE_FILE
-    with style_file_path.open("r") as style_file:
-        _style = style_file.read()
-        app.setStyleSheet(_style)
-
-    main_window = MainWindow()
-    main_window.show()
-    app.exec()
 
 
 class MainWindow(QMainWindow):
@@ -74,6 +63,15 @@ class MainWindow(QMainWindow):
     def _load_config_and_exercises(self) -> None:
         """Load the application configuration and exercises."""
         self.config = parse_config()
+        if self.config.backing_tracks_dir:
+            file_format = infer_file_format(self.config.backing_tracks_dir)
+            naming_scheme = infer_naming_scheme(self.config.backing_tracks_dir)
+
+            self.config.file_format = file_format
+            self.config.naming_scheme = naming_scheme
+
+            save_config(self.config)
+
         self.exercises, self.weights = get_exercises_and_weights(
             self.config.csv_path,
             self.config.first_exercise,
@@ -92,6 +90,18 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(central_widget)
         layout.setContentsMargins(MARGIN, MARGIN, MARGIN, MARGIN)
         self.setCentralWidget(central_widget)
+
+        cog_button = QPushButton("⚙️")
+        cog_button.setObjectName("cog_button")
+        # cog_button.setIcon(QIcon.fromTheme("preferences-system"))
+        cog_button.setFixedSize(QSize(32, 32))
+        cog_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        cog_button.clicked.connect(self._settings)
+
+        top_layout = QHBoxLayout()
+        top_layout.addStretch()
+        top_layout.addWidget(cog_button)
+        layout.addLayout(top_layout)
 
         bk_tracks_button_layout = self._add_bk_tracks_button()
         self._add_modes_tab(layout, self.bk_tracks_button)
@@ -176,6 +186,7 @@ class MainWindow(QMainWindow):
 
         """
         feedback_label = QLabel(FEEDBACK_LABEL)
+        feedback_label.setObjectName("feedback_label")
         feedback_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         feedback_label.setFixedHeight(50)
         layout.addWidget(feedback_label)
@@ -288,6 +299,8 @@ class MainWindow(QMainWindow):
             self.bk_tracks_button.setEnabled(False)
 
     # --- Core Logic ---
+    # ! app doesn't behave properly with non-standard exercise range
+    # TODO: app doesn't behave properly with non-standard exercise range
 
     def play_backing_track(self) -> None:
         """Play the backing track for the current exercise, if available.
@@ -373,6 +386,22 @@ class MainWindow(QMainWindow):
         else:
             raise ValueError("Invalid tab index. This should never happen.")
 
+    def _settings(self) -> None:
+        settings = SettingsDialog()
+        settings.read_config(self.config)
+        if settings.exec() == QDialog.DialogCode.Accepted:
+            config = Config(
+                csv_path=Path(settings.csv_path),
+                first_exercise=settings.first_exercise,
+                last_exercise=settings.last_exercise,
+                backing_tracks_dir=Path(settings.bk_tracks_dir)
+                if settings.bk_tracks_dir
+                else None,
+            )
+            save_config(config)
+            self._load_config_and_exercises()
+            self.next_exercise()
+
     def _enable_buttons(self, mode_widget: BaseModeWidget) -> None:
         """Enable or disable buttons in the mode widget.
 
@@ -412,7 +441,3 @@ class MainWindow(QMainWindow):
             )
         else:
             self.bk_tracks_button.setEnabled(False)
-
-
-if __name__ == "__main__":
-    main()

@@ -1,4 +1,4 @@
-QLabel {
+QLabel#feedback_label {
     font-size: 24px;
 }
 
@@ -13,19 +13,25 @@ QLabel#input_label {
 }
 
 
-QPushButton {
+QPushButton#bk_tracks_button {
     font-size: 24px;
     border-radius: 10px;
-}
-
-QPushButton#bk_tracks_button {
     background-color: #2196f3;
 }
 
 QPushButton#good_button {
+    font-size: 24px;
+    border-radius: 10px;
     background-color: #4caf4f;
 }
 
 QPushButton#bad_button {
+    font-size: 24px;
+    border-radius: 10px;
     background-color: #f44336;
+}
+
+QPushButton#cog_button {
+    font-size: 24px;
+    border-radius: 10px;
 }

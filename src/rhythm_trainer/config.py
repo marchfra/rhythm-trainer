@@ -4,10 +4,10 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from platformdirs import user_config_dir
+from platformdirs import user_config_dir, user_data_dir
 
 APP_NAME = "rhythm_trainer"
-CONFIG_FILENAME = ".config.yaml"
+CONFIG_FILENAME = "config.yaml"
 MAX_EXERCISES = 90  # Default maximum number of exercises supported
 
 
@@ -58,7 +58,7 @@ def parse_config(config_filename: str = CONFIG_FILENAME) -> Config:
     config_path = get_config_path(config_filename)
     if not config_path.exists():
         print("Configuration file not found. Creating a default one.")
-        default_config = Config(csv_path=Path("exercises.csv"))
+        default_config = Config(csv_path=Path(user_data_dir() + "/exercises.csv"))
         with config_path.open("w") as file:
             yaml.safe_dump(default_config.to_dict(), file)
         return default_config
@@ -93,3 +93,9 @@ def parse_config(config_filename: str = CONFIG_FILENAME) -> Config:
         )
 
     return config
+
+
+def save_config(config: Config, config_filename: str = CONFIG_FILENAME) -> None:
+    config_path = get_config_path(config_filename)
+    with config_path.open("w") as file:
+        yaml.safe_dump(config.to_dict(), file)

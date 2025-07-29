@@ -19,7 +19,7 @@ dependencies = [
 main = "rhythm_trainer.main:main"
 
 [project.gui-scripts]
-gui = "rhythm_trainer.gui.main_window:main"
+gui = "rhythm_trainer.main:main"
 
 [build-system]
 requires = ["hatchling"]

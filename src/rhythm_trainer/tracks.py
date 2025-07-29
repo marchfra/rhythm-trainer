@@ -37,8 +37,7 @@ def validate_backing_track(
         )
     elif naming_convention == NamingScheme.DEFAULT:
         track_path = (
-            chapter_folder
-            / f"{chapter_folder.name} {exercise:02d} BK.{file_format.value}"
+            chapter_folder / f"{chapter_folder.name} {exercise} BK.{file_format.value}"
         )
     else:
         raise ValueError(
