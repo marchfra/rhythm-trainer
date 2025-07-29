@@ -83,6 +83,13 @@ def get_config_path(config_filename: str) -> Path:
     return config_dir / config_filename
 
 
+def save_config(config: Config, config_filename: str = CONFIG_FILENAME) -> None:
+    """Save the given configuration to a YAML file."""
+    config_path = get_config_path(config_filename)
+    with config_path.open("w") as file:
+        yaml.safe_dump(config.to_dict(), file)
+
+
 def parse_config(config_filename: str = CONFIG_FILENAME) -> Config:
     """Parse the configuration file and return a Config object.
 
@@ -134,10 +141,3 @@ def parse_config(config_filename: str = CONFIG_FILENAME) -> Config:
         raise FileNotFoundError(error_message)
 
     return config
-
-
-def save_config(config: Config, config_filename: str = CONFIG_FILENAME) -> None:
-    """Save the given configuration to a YAML file."""
-    config_path = get_config_path(config_filename)
-    with config_path.open("w") as file:
-        yaml.safe_dump(config.to_dict(), file)
