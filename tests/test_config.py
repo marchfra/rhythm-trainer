@@ -31,14 +31,14 @@ def patch_user_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None
     )
 
 
-def test_config_to_dict_with_backing_tracks() -> None:
+def test_config_to_dict_with_backing_tracks(tmp_path: Path) -> None:
     config = Config(
         csv_path=Path("foo.csv"),
-        backing_tracks_dir=Path("/tmp/bk"),
+        backing_tracks_dir=tmp_path / "bk",
     )
     config_dict = config.to_dict()
     assert config_dict["csv_path"] == "foo.csv"
-    assert config_dict["backing_tracks_dir"] == "/tmp/bk"
+    assert config_dict["backing_tracks_dir"] == str(tmp_path / "bk")
     assert config_dict["naming_scheme"] == "default"
     assert config_dict["file_format"] == "wav"
 

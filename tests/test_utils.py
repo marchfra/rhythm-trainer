@@ -11,9 +11,21 @@ from rhythm_trainer.utils import (
 )
 
 
-def test_get_valid_input_valid(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("builtins.input", lambda _: "yes")
-    assert get_valid_input("Prompt: ", ["yes", "no"]) == "yes"
+@pytest.mark.parametrize(
+    ("valid_input", "expected_inputs"),
+    [
+        ("yes", ["yes", "no"]),
+        ("no", ["yes", "no"]),
+        ("42", ["42", "57", "12", "91"]),
+    ],
+)
+def test_get_valid_input_valid(
+    monkeypatch: pytest.MonkeyPatch,
+    valid_input: str,
+    expected_inputs: list[str],
+) -> None:
+    monkeypatch.setattr("builtins.input", lambda _: valid_input)
+    assert get_valid_input("Prompt: ", expected_inputs) == valid_input
 
 
 def test_get_valid_input_invalid_then_valid(
@@ -29,9 +41,13 @@ def test_get_valid_input_invalid_then_valid(
     assert "yes, no" in captured.out
 
 
-def test_get_number_input_valid(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("builtins.input", lambda _: "42")
-    assert get_number_input("Enter a number: ") == 42
+@pytest.mark.parametrize("valid_inputs", [42, 57, 12, 91])
+def test_get_number_input_valid(
+    monkeypatch: pytest.MonkeyPatch,
+    valid_inputs: int,
+) -> None:
+    monkeypatch.setattr("builtins.input", lambda _: str(valid_inputs))
+    assert get_number_input("Enter a number: ") == valid_inputs
 
 
 def test_get_number_input_invalid_then_valid(
@@ -64,10 +80,10 @@ def test_get_number_input_above_max(
 ) -> None:
     responses = iter(["100", "7"])
     monkeypatch.setattr("builtins.input", lambda _: next(responses))
-    result = get_number_input("Enter a number: ", max_value=10)
+    result = get_number_input("Enter a number: ", max_value=7)
     assert result == 7
     captured = capsys.readouterr()
-    assert "less than or equal to 10" in captured.out
+    assert "less than or equal to 7" in captured.out
 
 
 def test_get_number_input_between_min_max(
