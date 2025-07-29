@@ -81,7 +81,6 @@ def infer_naming_scheme(bk_tracks_dir: Path) -> NamingScheme:
         )
 
     for file in acoustic_dir.iterdir():
-        # print(f"Checking file: {file.name}")
         if "BK" in file.name:
             if file.name.startswith("BK "):
                 return NamingScheme.LOGICAL
