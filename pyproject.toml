@@ -14,9 +14,6 @@ dependencies = [
     "pyyaml>=6.0.2",
 ]
 
-[project.scripts]
-main = "rhythm_trainer.main:main"
-
 [project.gui-scripts]
 gui = "rhythm_trainer.main:main"
 
@@ -35,22 +32,25 @@ dev = [
 addopts = "-ra -q --cov=rhythm_trainer --cov-report=html"
 testpaths = ["tests"]
 
-# [tool.ruff]
-# line-length = 88
-# indent-width = 4
+[tool.pyright]
+exclude = [".venv"]
+pythonVersion = "3.13"
+venvPath = "."
+venv = ".venv"
 
-# [tool.ruff.format]
-# quote-style = "double"
-# indent-style = "space"
-# skip-magic-trailing-comma = false
-# line-ending = "auto"
+[tool.ruff]
+extend = "~/.config/ruff/ruff.toml"
 
-# [tool.ruff.lint]
-# ignore = ["G004"]
+[tool.ruff.lint]
+ignore = [
+    "G004",  # logging-f-string
+]
 
-# [tool.ruff.lint.per-file-ignores]
-# "tests/**/*.py" = [
-#     "S101",  # Ignore use of assert in tests
-#     "ARG",   # flake8-unused-arguments
-#     "FBT",   # flake8-boolean-trap
-# ]
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "S101",  # Ignore use of assert in tests
+    "ARG",   # flake8-unused-arguments
+    "FBT",   # flake8-boolean-trap
+    "PLR2004",  # magic-value-comparison
+    "S311",  # suspiciuous-non-cryptographic-random-usage
+]
