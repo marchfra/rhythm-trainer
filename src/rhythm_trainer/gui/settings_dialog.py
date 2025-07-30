@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import (
 )
 
 from rhythm_trainer import dirs
-from rhythm_trainer.config import Config
+from rhythm_trainer.config import MAX_EXERCISES, Config
 
 
 class SettingsDialog(QDialog):
@@ -24,23 +24,31 @@ class SettingsDialog(QDialog):
         self.setFixedSize(QSize(483, 201))
 
         layout = QFormLayout(self)
+        self._add_csv_section(layout)
+        self._add_bk_tracks_section(layout)
+        self._add_range_section(layout)
+        self._add_buttons_section(layout)
 
+        layout.setVerticalSpacing(15)
+
+    def _add_csv_section(self, layout: QFormLayout) -> None:
         file_layout = QHBoxLayout()
         self.csv_file_line = QLineEdit()
         self.csv_file_line.setReadOnly(True)
         self.csv_file_line.setMinimumWidth(135)
-        csv_browse_button = QPushButton("Browse", self)
-        csv_browse_button.setToolTip("Browse for CSV file")
-        csv_browse_button.clicked.connect(self._browse_csv)
         csv_new_button = QPushButton("New", self)
         csv_new_button.setToolTip("Create new CSV file")
         csv_new_button.clicked.connect(self._new_csv)
+        csv_browse_button = QPushButton("Browse", self)
+        csv_browse_button.setToolTip("Browse for CSV file")
+        csv_browse_button.clicked.connect(self._browse_csv)
         file_layout.addWidget(self.csv_file_line)
         file_layout.addWidget(csv_new_button)
         file_layout.addWidget(csv_browse_button)
         file_layout.setSpacing(8)
         layout.addRow("CSV Path:", file_layout)
 
+    def _add_bk_tracks_section(self, layout: QFormLayout) -> None:
         bk_tracks_layout = QHBoxLayout()
         self.bk_tracks_line = QLineEdit()
         self.bk_tracks_line.setReadOnly(True)
@@ -52,21 +60,24 @@ class SettingsDialog(QDialog):
         bk_tracks_layout.addWidget(bk_tracks_browse_button)
         layout.addRow("Backing Tracks Directory:", bk_tracks_layout)
 
+    def _add_range_section(self, layout: QFormLayout) -> None:
         range_layout = QHBoxLayout()
         self.range_min_spin = QSpinBox()
         self.range_min_spin.setValue(1)
         self.range_min_spin.setFixedWidth(50)
         self.range_max_spin = QSpinBox()
-        self.range_max_spin.setValue(90)
+        self.range_max_spin.setValue(MAX_EXERCISES)
         self.range_max_spin.setFixedWidth(50)
 
         self.range_min_spin.valueChanged.connect(self._set_first_exercise)
         self.range_max_spin.valueChanged.connect(self._set_last_exercise)
+
         range_layout.addWidget(self.range_min_spin)
         range_layout.addWidget(QLabel("-"))
         range_layout.addWidget(self.range_max_spin)
         layout.addRow("Exercise Range:", range_layout)
 
+    def _add_buttons_section(self, layout: QFormLayout) -> None:
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Save
             | QDialogButtonBox.StandardButton.Cancel,
@@ -74,8 +85,6 @@ class SettingsDialog(QDialog):
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addRow(buttons)
-
-        layout.setVerticalSpacing(15)
 
     def _new_csv(self) -> None:
         file_dialog = QFileDialog(
@@ -130,7 +139,7 @@ class SettingsDialog(QDialog):
             self.bk_tracks_line.setCursorPosition(0)
 
     def _set_first_exercise(self, value: int) -> None:
-        self.range_max_spin.setRange(value, 90)
+        self.range_max_spin.setRange(value, MAX_EXERCISES)
         self.first_exercise = value
 
     def _set_last_exercise(self, value: int) -> None:
