@@ -149,7 +149,7 @@ def test_play_backing_track_valid_track(
     )
     called = {}
 
-    def mock_popen(args, stdout) -> None:
+    def mock_popen(args: list[str], stdout: int | None) -> None:
         called["args"] = args
         called["stdout"] = stdout
 
