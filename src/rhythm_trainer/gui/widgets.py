@@ -17,7 +17,7 @@ class NumberOnlyLineEdit(QLineEdit):
         contents: str | None = None,
         parent: QWidget | None = None,
     ) -> None:
-        super().__init__(contents if contents is not None else "", parent)
+        super().__init__(contents, parent)
         validator = QIntValidator()
         validator.setRange(first_exercise, last_exercise)
         self.setValidator(validator)
