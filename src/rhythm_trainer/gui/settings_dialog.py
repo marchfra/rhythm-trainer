@@ -64,9 +64,11 @@ class SettingsDialog(QDialog):
         range_layout = QHBoxLayout()
         self.range_min_spin = QSpinBox()
         self.range_min_spin.setValue(1)
+        self.range_min_spin.setRange(1, MAX_EXERCISES)
         self.range_min_spin.setFixedWidth(50)
         self.range_max_spin = QSpinBox()
         self.range_max_spin.setValue(MAX_EXERCISES)
+        self.range_max_spin.setRange(1, MAX_EXERCISES)
         self.range_max_spin.setFixedWidth(50)
 
         self.range_min_spin.valueChanged.connect(self._set_first_exercise)

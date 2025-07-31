@@ -53,4 +53,5 @@ ignore = [
     "FBT",   # flake8-boolean-trap
     "PLR2004",  # magic-value-comparison
     "S311",  # suspiciuous-non-cryptographic-random-usage
+    "SLF001",  # Private member accessed
 ]
