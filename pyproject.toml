@@ -23,6 +23,7 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    "babel>=2.17.0",
     "pytest>=8.4.1",
     "pytest-cov>=6.2.1",
     "pytest-qt>=4.5.0",

@@ -1,0 +1,61 @@
+# Italian translations for rhythm-trainer.
+# Copyright (C) 2025 Francesco Marchisotti
+# This file is distributed under the same license as the rhythm-trainer
+# project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: rhythm-trainer 0.1.0\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-08-01 20:22+0200\n"
+"PO-Revision-Date: 2025-08-01 15:01+0200\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: it\n"
+"Language-Team: it <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: src/rhythm_trainer/gui/main_window.py:36
+msgid "Rhythm Trainer"
+msgstr "Rhythm Trainer"
+
+#: src/rhythm_trainer/gui/main_window.py:39
+msgid "Play backing track"
+msgstr "Suona backing track"
+
+#: src/rhythm_trainer/gui/main_window.py:41
+msgid "Random Exercise"
+msgstr "Esercizio Casuale"
+
+#: src/rhythm_trainer/gui/main_window.py:42
+msgid "Manual Input"
+msgstr "Input Manuale"
+
+#: src/rhythm_trainer/gui/main_window.py:43
+msgid "How did it go?"
+msgstr "Com'è andata?"
+
+#: src/rhythm_trainer/gui/main_window.py:44
+msgid "Good"
+msgstr "Bene"
+
+#: src/rhythm_trainer/gui/main_window.py:45
+msgid "Bad"
+msgstr "Male"
+
+#: src/rhythm_trainer/gui/modes.py:76
+msgid "Exercise"
+msgstr "Esercizio"
+
+#: src/rhythm_trainer/gui/modes.py:91
+msgid "Enter an exercise"
+msgstr "Scegli un esercizio"
+
+#: src/rhythm_trainer/gui/modes.py:101
+msgid "Exercise range"
+msgstr "Range di esercizi"
+

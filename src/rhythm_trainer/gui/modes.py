@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import (
 from rhythm_trainer.config import FileFormat, NamingScheme
 from rhythm_trainer.exercises import pick_random_exercise
 from rhythm_trainer.gui.widgets import NumberOnlyLineEdit
+from rhythm_trainer.i18n import _
 from rhythm_trainer.tracks import validate_backing_track
 
 
@@ -62,7 +63,7 @@ class RandomModeWidget(BaseModeWidget):
         self.exercise_label = QLabel()
         self.exercise_label.setObjectName("question")
         self.exercise_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.exercise_label.setFixedHeight(30)
+        self.exercise_label.setMinimumHeight(30)
         layout.addWidget(self.exercise_label)
 
     def pick_exercise(
@@ -72,7 +73,7 @@ class RandomModeWidget(BaseModeWidget):
         buffer: list[int],
     ) -> int:
         self.current_exercise = pick_random_exercise(exercises, weights, buffer)
-        self.exercise_label.setText(f"Exercise #{self.current_exercise}")
+        self.exercise_label.setText(f"{_('Exercise')} #{self.current_exercise}")
         return self.current_exercise
 
 
@@ -87,17 +88,17 @@ class ManualModeWidget(BaseModeWidget):
         super().__init__(bk_tracks_button, parent)
 
         layout = QVBoxLayout(self)
-        input_label = QLabel("Enter an exercise")
+        input_label = QLabel(_("Enter an exercise"))
         input_label.setObjectName("input_label")
         input_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        input_label.setFixedHeight(30)
+        input_label.setMinimumHeight(30)
         layout.addWidget(input_label)
 
         self.exercise_input = NumberOnlyLineEdit(first_exercise, last_exercise)
         self.exercise_input.setObjectName("exercise_input")
         self.exercise_input.textChanged.connect(self._validate_exercise_input)
         self.exercise_input.setPlaceholderText(
-            f"Exercise range: {first_exercise} - {last_exercise}",
+            f"{_('Exercise range')}: {first_exercise} - {last_exercise}",
         )
         layout.addWidget(self.exercise_input)
 

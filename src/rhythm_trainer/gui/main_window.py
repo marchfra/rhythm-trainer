@@ -23,13 +23,15 @@ from rhythm_trainer.exercises import (
 )
 from rhythm_trainer.gui.modes import BaseModeWidget, ManualModeWidget, RandomModeWidget
 from rhythm_trainer.gui.settings_dialog import SettingsDialog
+from rhythm_trainer.i18n import _
 from rhythm_trainer.logger import get_logger
 from rhythm_trainer.tracks import play_backing_track
 from rhythm_trainer.utils import infer_file_format, infer_naming_scheme
 
 logger = get_logger(__name__)
 
-TEST_MODE = True
+
+SKIP_BK_TRACKS_OPEN = True
 
 # --- UI Constants ---
 WINDOW_TITLE = "Rhythm Trainer"
@@ -53,8 +55,8 @@ class MainWindow(QMainWindow):
 
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle(WINDOW_TITLE)
-        self.setFixedSize(QSize(*WINDOW_SIZE))
+        self.setWindowTitle(_(WINDOW_TITLE))
+        self.setMinimumSize(QSize(*WINDOW_SIZE))
 
         self._load_config_and_exercises()
         self._setup_ui()
@@ -128,7 +130,7 @@ class MainWindow(QMainWindow):
         """
         bk_tracks_button_layout = QHBoxLayout()
 
-        self.bk_tracks_button = QPushButton(BK_BUTTON_TEXT)
+        self.bk_tracks_button = QPushButton(_(BK_BUTTON_TEXT))
         self.bk_tracks_button.setObjectName("bk_tracks_button")
         self.bk_tracks_button.setFixedSize(QSize(*BK_BUTTON_SIZE))
         self.bk_tracks_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -171,8 +173,8 @@ class MainWindow(QMainWindow):
             self._update_manual_mode_bk_button,
         )
 
-        self.tabs.addTab(self.random_mode, TAB_RANDOM)
-        self.tabs.addTab(self.manual_mode, TAB_MANUAL)
+        self.tabs.addTab(self.random_mode, _(TAB_RANDOM))
+        self.tabs.addTab(self.manual_mode, _(TAB_MANUAL))
 
         layout.addWidget(self.tabs)
 
@@ -187,14 +189,14 @@ class MainWindow(QMainWindow):
                 The layout to which the feedback section is added.
 
         """
-        feedback_label = QLabel(FEEDBACK_LABEL)
+        feedback_label = QLabel(_(FEEDBACK_LABEL))
         feedback_label.setObjectName("feedback_label")
         feedback_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         feedback_label.setFixedHeight(50)
         layout.addWidget(feedback_label)
 
         feedback_buttons_layout = QHBoxLayout()
-        self.good_button = QPushButton(GOOD_BUTTON_TEXT)
+        self.good_button = QPushButton(_(GOOD_BUTTON_TEXT))
         self.good_button.setFocus()
         self.good_button.setObjectName("good_button")
         self.good_button.setMinimumSize(QSize(*FEEDBACK_BUTTON_SIZE))
@@ -202,7 +204,7 @@ class MainWindow(QMainWindow):
         self.good_button.clicked.connect(self.good_feedback)
         feedback_buttons_layout.addWidget(self.good_button)
 
-        self.bad_button = QPushButton(BAD_BUTTON_TEXT)
+        self.bad_button = QPushButton(_(BAD_BUTTON_TEXT))
         self.bad_button.setObjectName("bad_button")
         self.bad_button.setMinimumSize(QSize(*FEEDBACK_BUTTON_SIZE))
         self.bad_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -302,14 +304,12 @@ class MainWindow(QMainWindow):
 
     # --- Core Logic ---
     # ! app doesn't behave properly with non-standard exercise range
-    # TODO: app doesn't behave properly with non-standard exercise range
 
     def play_backing_track(self) -> None:
         """Play the backing track for the current exercise, if available.
 
         This method also disables the backing tracks button during playback and enables
-        the 'good' and 'bad' buttons afterwards. Does nothing if TEST_MODE is active or
-        no exercise is selected.
+        the 'good' and 'bad' buttons afterwards.
         """
         logger.info(f"Playing backing track for exercise {self.current_exercise}.")
         self.bk_tracks_button.setEnabled(False)
@@ -317,7 +317,7 @@ class MainWindow(QMainWindow):
         if (
             self.config.backing_tracks_dir
             and self.current_exercise is not None
-            and not TEST_MODE
+            and not SKIP_BK_TRACKS_OPEN
         ):
             play_backing_track(
                 self.current_exercise,
